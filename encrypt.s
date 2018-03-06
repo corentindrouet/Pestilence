@@ -193,7 +193,7 @@ _encrypt_loop:
 	xor r10, r10
 	mov r10d, DWORD [rsi]
 	add QWORD [rsp + 0x410], r10
-	and QWORD [rsp + 0x410], 256
+	and QWORD [rsp + 0x410], 255
 
 ; zone[rcx] = zone[rcx] ^ tab[j]
 	mov r12, 4

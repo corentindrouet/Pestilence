@@ -7,6 +7,7 @@
 #include <sys/mman.h>
 
 char *encrypt_zone(void *zone, int size);
+//void	*get_random_key(void);
 
 int		file_size(int fd) {
 	int off;
@@ -17,7 +18,20 @@ int		file_size(int fd) {
 	return (off);
 }
 
-/*void	*get_random_key(size_t size)
+/*void	*get_random_key(void)
+{  
+    unsigned char *key;
+    int i;
+
+    key = malloc(256 + 1);
+    i = 0;
+    while (i < 256) {
+        key[i] = i;
+        i++;
+    }
+    key[256] = 0;
+    return (key);
+}
 {
 	void	*buffer;
 	int		fd;
@@ -26,12 +40,12 @@ int		file_size(int fd) {
 	numberRandomBytesReaded = 0;
 	if ((fd = open("/dev/urandom", O_RDONLY)) == -1)
 		return (NULL);
-	if (!(buffer = malloc(size + 1)))
+	if (!(buffer = malloc(256 + 1)))
 		return (NULL);
-	bzero(buffer, size + 1);
+	bzero(buffer, 256 + 1);
 	while (numberRandomBytesReaded < 256)
 	{
-		read(fd, (buffer + numberRandomBytesReaded), size - numberRandomBytesReaded);
+		read(fd, (buffer + numberRandomBytesReaded), 256 - numberRandomBytesReaded);
 		numberRandomBytesReaded = strlen(buffer);
 	}
 	close(fd);
@@ -45,18 +59,18 @@ void	swap(int *a, int *b)
 	*a = *a - *b;
 }
 
-unsigned char	*encrypt_zone(char *zone, size_t size)
+unsigned char	*encrypt_zone(char *zone, size_t size, unsigned char *key)
 {
-	unsigned char	*key;
+//	unsigned char	*key;
 	int				tab[256];
 	int				i;
 	int				j;
 	size_t			k;
 
-	if (!zone || !size || !(key = get_random_key(256)))
+	if (!zone || !size || !key)//!(key = get_random_key(256)))
 		return (0);
 	i = -1;
-	printf("Encryption key :\n%s\n", key);
+//	printf("Encryption key :\n%s\n", key);
 	while (++i < 256)
 		tab[i] = i;
 	i = -1;
@@ -86,7 +100,7 @@ int main(int argc, char **argv) {
 	int fd_encrypted = open(argv[2], O_RDWR);
 	int fd_to_encrypt_size = file_size(fd_to_encrypt);
 	char *mmap_to_encrypt = mmap(0, fd_to_encrypt_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd_to_encrypt, 0);
-	char *key;
+	unsigned char *key;// = get_random_key();
 
 	key = encrypt_zone(mmap_to_encrypt, fd_to_encrypt_size);
 	write(fd_encrypted, key, 256);
@@ -94,6 +108,7 @@ int main(int argc, char **argv) {
 	munmap(mmap_to_encrypt, fd_to_encrypt_size);
 	close(fd_to_encrypt);
 	close(fd_encrypted);
+//    free(key);
 	munmap(key, 256);
 	return (0);
 }
