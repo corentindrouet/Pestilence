@@ -7,14 +7,14 @@ To check the signature, simply copy/paste the following command :
 `strings /tmp/test* | grep <signatureName>`
 
 ## Mandatory
-- [ ] Infect all of the binaries located in /tmp/test and /tmp/test2 directories
+- [x] Infect all of the binaries located in /tmp/test and /tmp/test2 directories
 - [ ] Infect all of the binaries of type executable ELF x86_64
 - [ ] Insert a signature like 'Pestilence version 1.0 (c)oded by first-login - second-login'
 - [ ] Create an obfuscation method to hide the infection routine
 - [ ] Create a deobfuscation method that will run the infection
 - [ ] DO NOT re-infect the an already infected file
-- [ ] DO NOT run infection if a specific process is running on host
-- [ ] DO NOT run infection if the program is launched into gdb, etc
+- [x] DO NOT run infection if a specific process is running on host
+- [x] DO NOT run infection if the program is launched into gdb, etc
 
 ## Bonus
 - [ ] Infect all files from the root directory
