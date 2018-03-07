@@ -295,9 +295,27 @@ _copy_key:
 
 _copy_depacker:
 ;; memcpy(mmap_tmp + index, decrypt, decrypt_size)
-;	lea rax, [rel _o_entry]
-;	cmp QWORD [rax], 0
-;	je _write_decrypt
+	lea rax, [rel _o_entry]
+	cmp QWORD [rax], 0
+	je _write_decrypt
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 116]
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 116]
+	lea rsi, [rel _decrypt]
+	lea rcx, [rel _end_decrypt]
+	add rcx, 2
+	sub rcx, rsi
+	lea rsi, [rel _final_end]
+	add rsi, 258
+	cld
+	rep movsb
+	lea rsi, [rel _decrypt]
+	lea rcx, [rel _end_decrypt]
+	add rcx, 2
+	sub rcx, rsi
+	add QWORD [rsp + 116], rcx
+	jmp _complete
 ;	mov rdi, QWORD [rsp + 108]
 ;	add rdi, QWORD [rsp + 116]
 ;	lea rsi, [rel _o_entry]
@@ -313,7 +331,7 @@ _copy_depacker:
 ;	mov r10, QWORD [r10]
 ;	add QWORD [rsp + 116], r10
 ;	jmp _complete
-
+_write_decrypt:
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
 	lea rsi, [rel _decrypt]
