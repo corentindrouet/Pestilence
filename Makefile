@@ -1,33 +1,31 @@
-EXEC		=	famine
-SRC			=	famine.s \
-                start_infect.s \
-				fork.s \
-				update_mmaped_file.s \
-				treat_file.s
+EXEC		=	pestilence
+SRC			=	main.s \
+				checkdbg.s \
+				checkproc.s \
+				readdir.s \
+				infect.s \
+				ft_strlen.s \
+				ft_strequ.s \
+				ft_strstr.s \
+				file_size.s
 OBJ			=	$(SRC:.s=.o)
 NASM		=	nasm
 NASMFLAGS	=	-f elf64
 LINKER		=	ld
 
 $(EXEC): $(OBJ)
-	$(info Compiling $(EXEC))
 	$(LINKER) -o $@ $^
 
 all: $(EXEC)
 
 %.o: %.s
-	$(info Compiling $< into $@ ...)
-	@$(NASM) $(NASMFLAGS) -o $@ $<
+	$(NASM) $(NASMFLAGS) -o $@ $<
 
 clean:
-	$(info Cleaning ./ ...)
 	rm -f $(OBJ)
-	$(info Done !)
 
 fclean: clean
-	$(info Cleaning ./ ...)
-	@rm -rf $(EXEC)
-	$(info Done !)
+	rm -rf $(EXEC)
 
 re: fclean all
 
