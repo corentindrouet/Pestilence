@@ -1,5 +1,5 @@
 section .text
-	global encrypt_zone
+	global _encrypt_zone
 
 _ft_strlen:
 	enter 16, 0
@@ -70,12 +70,10 @@ _ret_random_key:
 	leave
 	ret
 
-_log:
-	db 'log', 10
+_encrypt_zone: ; char *encrypt_zone((void*)zone rdi, (int)zone_size rsi, (void*)new_zone rdx)
+	enter 1072, 0
 
-encrypt_zone:
-	enter 1064, 0
-
+	mov QWORD [rsp + 0x428], rdx ; zone
 	mov QWORD [rsp + 0x418], rdi ; zone
 	mov QWORD [rsp + 0x420], rsi ; zone size
 	syscall
@@ -202,7 +200,11 @@ _encrypt_loop:
 	xor r11, r11
 	mov r11d, DWORD [rsp + rax]
 	mov r10, QWORD [rsp + 0x418]
-	xor BYTE [r10 + rcx], r11b
+	mov rdi, QWORD [rsp + 0x428]
+	xor r12, r12
+	mov r12b, BYTE [r10 + rcx]
+	mov BYTE [rdi + rcx], r12b
+	xor BYTE [rdi + rcx], r11b
 	inc rcx
 	jmp _encrypt_loop.loop
 

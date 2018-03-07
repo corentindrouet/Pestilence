@@ -24,88 +24,13 @@
 
 section .text
 	global _decrypt
-	global _start
+	global _end_decrypt
 
-_file_size:
-	enter 24, 0
-; lseek to start of file
-	xor rax, rax
-	mov rax, 8
-	mov rsi, 0
-	mov rdx, 0
-	syscall
-; lseek to end of file
-	mov rax, 8
-	mov rsi, 0
-	mov rdx, 2
-	syscall
-; store the return value, it's the offset of EOF. So it's the file size
-; lseek to start of file again
-	mov QWORD [rsp], rax
-	mov rax, 8
-	mov rsi, 0
-	mov rdx, 0
-	syscall
-	mov rax, QWORD [rsp]
-	leave
-	ret
-
-_start:
-	enter 80, 0
-
-	mov rax, 2
-	mov rdi, QWORD [rsp + 104]
-	mov rsi, 0
-	syscall
-	test rax, rax
-	jz _exit
-	mov QWORD [rsp], rax
-	mov rdi, rax
-	call _file_size
-	mov QWORD [rsp + 8], rax
-	mov rax, 9
-	mov rdi, 0
-	mov rsi, QWORD [rsp + 8]
-	mov rdx, 3
-	mov r10, 2
-	mov r8, QWORD [rsp]
-	mov r9, 0
-	syscall
-	test rax, rax
-	jz _close_file
-	mov QWORD [rsp + 16], rax
-	mov rdi, QWORD [rsp + 16]
-	mov rsi, QWORD [rsp + 16]
-	add rsi, 256
-	mov rdx, QWORD [rsp + 8]
-	sub rdx, 256
-	call _decrypt
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, QWORD [rsp + 16]
-	add rsi, 256
-	mov rdx, QWORD [rsp + 8]
-	sub rdx, 256
-	syscall
-	mov rax, 11
-	mov rdi, QWORD [rsp + 16]
-	mov rsi, QWORD [rsp + 8]
-	syscall
-
-_close_file:
-	mov rax, 3
-	mov rdi, QWORD [rsp]
-	syscall
-
-_exit:
-	mov rax, 60
-	mov rdi, 0
-	syscall
-
-_decrypt: ; ((void*)key rdi, (void*)zone rsi, (int)zone_size rdx)
+_decrypt: ; ((void*)key rdi, (void*)zone rsi, (int)zone_size rdx, void* new_zone r10)
 ; allocate necessary stack memory
     push rbp
     mov rbp, rsp
+	push r10
 	push rdi
 	push rsi
 	push rdx
@@ -198,7 +123,7 @@ _decrypt_loop:
     xor r10, r10
     mov r10, QWORD [rsp + 0x490]
 	cmp rcx, r10
-	jge _end
+	jge _end_decrypt
 	add QWORD [rsp + 1040], 1
 	and QWORD [rsp + 1040], 255
 	xor r10, r10
@@ -256,10 +181,14 @@ _continue:
 	mov r10d, DWORD [rsp + rax]
     xor r11, r11
     mov r11, QWORD [rsp + 0x498]
-	xor BYTE [r11 + rcx], r10b
+	mov rdi, QWORD [rsp + 0x4a8]
+	xor rsi, rsi
+	mov sil, BYTE [r11 + rcx]
+	mov BYTE [rdi + rcx], sil
+	xor BYTE [rdi + rcx], r10b
 	inc rcx
 	jmp _decrypt_loop
 
-_end:
+_end_decrypt:
 	leave
 	ret

