@@ -111,6 +111,7 @@ _start:
 	sub r10, rcx
 	add rdi, r10
 	lea rcx, [rel _end_decrypt]
+	add rcx, 2
 	lea r10, [rel _decrypt]
 	sub rcx, r10
 	cld

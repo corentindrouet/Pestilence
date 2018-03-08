@@ -300,8 +300,6 @@ _copy_depacker:
 	je _write_decrypt
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
-	mov rdi, QWORD [rsp + 108]
-	add rdi, QWORD [rsp + 116]
 	lea rsi, [rel _decrypt]
 	lea rcx, [rel _end_decrypt]
 	add rcx, 2
