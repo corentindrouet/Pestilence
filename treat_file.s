@@ -106,7 +106,7 @@ _treat_file: ; void treat_file(char *name (rdi), long virus_size (rsi), char *fu
 	mov rdi, rsp
 	sub rdi, QWORD [rsp + 96]
 	mov rax, SYS_OPEN
-	mov rsi, 2
+	mov rsi, O_RDWR
 	xor rdx, rdx
 		mov r10, QWORD [rsp + 96]
 		sub rsp, r10
@@ -137,8 +137,8 @@ _treat_file: ; void treat_file(char *name (rdi), long virus_size (rsi), char *fu
 	mov rax, SYS_MMAP
 	mov rdi, 0
 	mov rsi, QWORD [rsp + 16]
-	mov rdx, 3
-	mov r10, 2
+	mov rdx, PROT_READ | PROT_WRITE
+	mov r10, MAP_PRIVATE
 	mov r8, QWORD [rsp]
 	mov r9, 0
 	syscall

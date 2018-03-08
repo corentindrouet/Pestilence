@@ -234,8 +234,8 @@ _mmap_tmp:
 	mov rdi, 0
 	mov rsi, QWORD [rsp + 8]
 	add rsi, PAGE_SIZE
-	mov rdx, 3
-	mov r10, 34
+	mov rdx, PROT_READ | PROT_WRITE
+	mov r10, MAP_ANONYMOUS | MAP_PRIVATE
 	mov r8, -1
 	mov r9, 0
 	syscall

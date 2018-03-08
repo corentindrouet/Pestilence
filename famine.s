@@ -93,8 +93,8 @@ _start:
 	mov rax, SYS_MMAP
 	mov rdi, 0
 	mov rsi, PAGE_SIZE
-	mov rdx, 7
-	mov r10, 34
+	mov rdx, PROT_READ | PROT_WRITE | PROT_EXEC
+	mov r10, MAP_ANONYMOUS | MAP_PRIVATE
 	mov r8, -1
 	mov r9, 0
 	syscall
@@ -507,7 +507,7 @@ _open_dir:
 	mov		rdi, rsp					; %rdi = stack pointer
 	mov		r10, QWORD [rsp + 336]		; %r10 = total path length
 	sub		rdi, r10					; move %rdi under the stack pointer by %r10 bytes
-	xor		rsi, rsi					; O_RDONLY flag
+	mov		rsi, O_RDONLY				; O_RDONLY flag
 	xor		rdx, rdx					; unused flag
 	mov		rax, SYS_OPEN				; sys_open number
 

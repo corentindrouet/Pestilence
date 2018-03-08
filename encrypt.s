@@ -31,7 +31,7 @@ _get_random_key:
 	mov QWORD [rsp], 0
 	mov rax, SYS_OPEN
 	lea rdi, [rel _u_random.string]
-	mov rsi, 0
+	mov rsi, O_RDONLY
 	syscall
 	cmp rax, 0
 	jle _ret_random_key
@@ -41,8 +41,8 @@ _mmap_key:
 	mov rax, SYS_MMAP
 	mov rdi, 0
 	mov rsi, 256
-	mov rdx, 3
-	mov r10, 34
+	mov rdx, PROT_READ | PROT_WRITE
+	mov r10, MAP_ANONYMOUS | MAP_PRIVATE
 	mov r8, -1
 	mov r9, 0
 	syscall

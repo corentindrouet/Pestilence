@@ -21,6 +21,28 @@
 	%define SYS_GETEUID 107
 	%define SYS_GETDENTS64 217
 
+; Open flags
+	%define O_RDWR 2
+	%define O_RDONLY 0
+	%define O_CREAT 64
+	%define O_TRUNC 512
+
+; Open mode
+	%define S_IRWXU 448
+	%define S_IRGRP 32
+	%define S_IROTH 4
+	%define S_IXGRP 8
+	%define S_IXOTH 1
+
+; Mmap protection
+	%define PROT_READ 1
+	%define PROT_WRITE 2
+	%define PROT_EXEC 4
+
+; Mmap flags
+	%define MAP_PRIVATE 2
+	%define MAP_ANONYMOUS 32
+
 ; includes
 	%ifndef FAMINE_S
 		extern _start
