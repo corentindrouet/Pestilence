@@ -1,15 +1,19 @@
-;; ---------------------------------------------------
-;; size_t	_file_size(int fd)
-;; ---------------------------------------------------
+%define FILE_SIZE_S
 
 section .text
 	global	_file_size
+	%include "pestilence.lst"
 
-%define SEEK_SET	0x0
-%define SEEK_END	0x2
-
-%define sys_lseek	8
-
+;; -----------------------------------------------------------------------------------
+;; NAME
+;;		_file_size
+;;
+;; SYNOPSIS
+;;		size_t	_file_size(int fd)
+;;
+;; DESCRIPTION
+;;		Returns the size in bytes of the file pointed by fd.
+;; -----------------------------------------------------------------------------------
 _file_size:
 	enter	0, 0
 	push	rdi
@@ -41,3 +45,5 @@ _file_size:
 	pop		rdi
 	leave
 	ret
+
+%undef FILE_SIZE_S

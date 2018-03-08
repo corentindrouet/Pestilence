@@ -1,9 +1,18 @@
+%define FT_STRCMP_S
+
 section .text
 	global	_ft_strcmp
-	extern	_ft_strlen
+	%include "pestilence.lst"
 
 ;; -----------------------------------------------------------------------------------
-;; int		_ft_strcmp(const char *s1, const char *s2)
+;; NAME
+;;		_ft_strcmp
+;;
+;; SYNOSPSIS
+;;		int		_ft_strcmp(const char *s1, const char *s2)
+;;
+;; DESCRIPTION
+;;		Compares two strings. Returns 0 if strings are equal, 1 otherwise.
 ;; -----------------------------------------------------------------------------------
 _ft_strcmp:
 	enter	16, 0
@@ -45,3 +54,5 @@ _ft_strcmp_end:
 	pop		rdi
 	leave
 	ret
+
+%undef FT_STRCMP_S

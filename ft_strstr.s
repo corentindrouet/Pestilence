@@ -1,3 +1,5 @@
+%define FT_STRSTR_S
+
 section .text
 	global	_ft_strstr
 	global	_ft_strxequ
@@ -64,3 +66,5 @@ _ft_strstr_end:
 	pop		rdi
 	leave
 	ret
+
+%undef FT_STRSTR_S

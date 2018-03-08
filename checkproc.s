@@ -1,28 +1,10 @@
+%define CHECKPROC_S
+
 section .text
-
-global	_checkproc
-global	_readproc
-global	_isproc
-extern	_ft_strequ
-extern	_ft_strlen
-extern	_ft_strstr
-extern	_file_size
-
-;; -----------------------------------------------------------------------------------
-;; DEFINES
-;; -----------------------------------------------------------------------------------
-
-%define sys_read		0
-%define sys_write		1
-%define sys_open		2
-%define sys_close		3
-%define sys_mmap		9
-%define sys_getdents64	217
-
-%define O_RDONLY		0
-
-%define	DT_DIR			4
-%define	DT_REG			8
+	global _checkproc
+	global _readproc
+	global _isproc
+	%include "pestilence.lst"
 
 ;; -----------------------------------------------------------------------------------
 ;; STRINGS
@@ -379,3 +361,5 @@ _checkproc:
 	mov		rax, rcx
 	leave
 	ret
+
+%undef CHECKPROC_S

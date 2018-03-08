@@ -1,28 +1,8 @@
+%define INFECT_S
+
 section .text
 	global	_infect
-	extern	_file_size
-	extern	_ft_strlen
-
-%define	PROT_READ		0x04
-%define	PROT_WRITE		0x02
-%define	PROT_EXEC		0x01
-
-%define PT_LOAD			0x1
-
-%define PF_X			0x1
-%define PF_W			0x2
-%define PF_R			0x4
-
-%define sys_read		0x0
-%define sys_write		0x1
-%define sys_open		0x2
-%define sys_close		0x3
-%define sys_mmap		0x9
-%define sys_munmap		0xb
-
-%define ELFMAGIC		0x464c457f
-%define ELFCLASS64		0x2
-%define ET_EXEC			0x2
+	%include "pestilence.lst"
 
 _newline:
 	.string db 10, 0
@@ -226,3 +206,5 @@ _infect_end:
 	;; Return
 	leave
 	ret
+
+%undef INFECT_S

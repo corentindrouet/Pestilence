@@ -1,15 +1,8 @@
+%define READDIR_S
+
 section .text
-
-global	_readdir
-extern	_ft_strlen
-extern	_infect
-
-%define sys_write		1
-%define sys_open		2
-%define sys_getdents64	217
-
-%define	DT_DIR			4
-%define	DT_REG			8
+	global	_readdir
+	%include "pestilence.lst"
 
 ;; -----------------------------------------------------------------------------------
 ;; NAME
@@ -197,3 +190,5 @@ _readdir_close:
 _readdir_end:
 	leave
 	ret
+
+%undef READDIR_S

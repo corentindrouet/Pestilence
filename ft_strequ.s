@@ -1,6 +1,7 @@
+%define FT_STREQU_S
+
 section	.text
 	global	_ft_strequ
-	extern	_ft_strlen
 
 _ft_strequ:
 	enter	0, 0
@@ -32,3 +33,5 @@ _ft_strequ_end:
 	pop		rdi
 	leave
 	ret
+
+%undef FT_STREQU_S

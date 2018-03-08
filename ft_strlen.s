@@ -1,9 +1,8 @@
+%define FT_STRLEN_S
+
 section .text
 	global	_ft_strlen
 
-;; ---------------------------------------------------
-;; size_t	_ft_strlen(const char *s)
-;; ---------------------------------------------------
 _ft_strlen:
 	enter	0, 0
 	push	rdi
@@ -24,3 +23,5 @@ _ft_strlen_end:
 	pop		rdi
 	leave
 	ret
+
+%undef FT_STRLEN_S

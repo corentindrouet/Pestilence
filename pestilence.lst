@@ -1,0 +1,64 @@
+%ifndef PESTILENCE
+	;; Protection against double inclusion
+	%define PESTILENCE
+
+	;; Syscalls numbers
+	%define sys_read		0
+	%define sys_write		1
+	%define sys_open		2
+	%define sys_close		3
+	%define sys_lseek		8
+	%define sys_mmap		9
+	%define sys_munmap		11
+	%define sys_ptrace		101
+	%define sys_getdents64	217
+
+	;; Open
+	%define O_RDWR			2
+	%define O_RDONLY		0
+	%define O_CREAT			64
+	%define O_TRUNC			512
+
+	;; Lseek
+	%define SEEK_SET		0
+	%define SEEK_SET		2
+
+	;; Ptrace
+	%define PTRACE_TRACEME	0
+
+	;; Getdents64
+	%define DT_DIR			4
+	%define DT_REG			8
+
+	;; ELF
+	%define ELFMAGIC		0x464c457f
+	%define ELFCLASS64		2
+	%define ET_EXEC			2
+	%define PF_X			1
+	%define PF_W			2
+	%define PF_R			4
+	%define PT_LOAD			1
+
+	;; Includes
+	%ifndef CHECKPROC_S
+		extern	_ft_strequ
+		extern	_ft_strlen
+		extern	_ft_strstr
+		extern	_file_size
+	%endif
+
+	%ifndef FT_STRCMP_S
+		extern	_ft_strlen
+	%endif
+	
+	%ifndef READDIR_S
+		extern	_ft_strlen
+		extern	_infect
+	%endif
+
+	%ifndef INFECT_S
+		extern	_ft_strlen
+		extern	_file_size
+	%endif
+	
+%endif
