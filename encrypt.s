@@ -1,24 +1,26 @@
 ;; For more details about this algorithm: it's an RC8 algorithme with a base key of 256 bytes
+%define ENCRYPT_S
+%include "pestilence.lst"
 
 section .text
 	global _encrypt_zone
 
-_ft_strlen:
-	enter 16, 0
-	xor rax, rax
-	cmp rdi, 0
-	je _ret_len
-	xor rcx, rcx
-	dec rcx
-	cld
-	repne scasb
-	inc rcx
-	not rcx
-	mov rax, rcx
-
-_ret_len:
-	leave
-	ret
+;_ft_strlen:
+;	enter 16, 0
+;	xor rax, rax
+;	cmp rdi, 0
+;	je _ret_len
+;	xor rcx, rcx
+;	dec rcx
+;	cld
+;	repne scasb
+;	inc rcx
+;	not rcx
+;	mov rax, rcx
+;
+;_ret_len:
+;	leave
+;	ret
 	
 _u_random:
 	.string db '/dev/urandom', 0
@@ -27,7 +29,7 @@ _get_random_key:
 	enter 40, 0
 
 	mov QWORD [rsp], 0
-	mov rax, 2
+	mov rax, SYS_OPEN
 	lea rdi, [rel _u_random.string]
 	mov rsi, 0
 	syscall
@@ -36,7 +38,7 @@ _get_random_key:
 	mov QWORD [rsp + 8], rax
 
 _mmap_key:
-	mov rax, 9
+	mov rax, SYS_MMAP
 	mov rdi, 0
 	mov rsi, 256
 	mov rdx, 3
@@ -50,7 +52,7 @@ _mmap_key:
 
 	.loop cmp QWORD [rsp], 256
 	jge _close_file
-	mov rax, 0
+	mov rax, SYS_READ
 	mov rdi, QWORD [rsp + 8]
 	mov rsi, QWORD [rsp + 16]
 	add rsi, QWORD [rsp]
@@ -63,7 +65,7 @@ _mmap_key:
 	jmp _mmap_key.loop
 	
 _close_file:
-	mov rax, 3
+	mov rax, SYS_CLOSE
 	mov rdi, QWORD [rsp + 8]
 	syscall
 
@@ -78,7 +80,7 @@ _encrypt_zone: ; char *encrypt_zone((void*)zone rdi, (int)zone_size rsi, (void*)
 	mov QWORD [rsp + 0x428], rdx ; zone
 	mov QWORD [rsp + 0x418], rdi ; zone
 	mov QWORD [rsp + 0x420], rsi ; zone size
-	syscall
+;	syscall
 	call _get_random_key
 	mov QWORD [rsp + 0x400], rax
 
@@ -214,3 +216,5 @@ _encryption_finished:
 	mov rax, QWORD [rsp + 0x400]
 	leave
 	ret
+
+%undef ENCRYPT_S

