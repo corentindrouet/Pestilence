@@ -1,3 +1,5 @@
+;; For more details about this algorithm: it's an RC8 algorithme with a base key of 256 bytes
+
 section .text
 	global _encrypt_zone
 

