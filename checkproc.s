@@ -1,28 +1,10 @@
+%define CHECKPROC_S
+%include "pestilence.lst"
+
 section .text
-
-global	_checkproc
-global	_readproc
-global	_isproc
-extern	_ft_strequ
-extern	_ft_strlen
-extern	_ft_strstr
-extern	_file_size
-
-;; -----------------------------------------------------------------------------------
-;; DEFINES
-;; -----------------------------------------------------------------------------------
-
-%define sys_read		0
-%define sys_write		1
-%define sys_open		2
-%define sys_close		3
-%define sys_mmap		9
-%define sys_getdents64	217
-
-%define O_RDONLY		0
-
-%define	DT_DIR			4
-%define	DT_REG			8
+	global _checkproc
+	global _readproc
+	global _isproc
 
 ;; -----------------------------------------------------------------------------------
 ;; STRINGS
@@ -72,7 +54,7 @@ _isproc:
 	mov		qword [rsp + 16], 0
 
 	;; Open file
-	mov		rax, sys_open
+	mov		rax, SYS_OPEN
 	lea		rdi, [rbp + 24]
 	mov		rsi, O_RDONLY
 	mov		rdx, 0
@@ -88,7 +70,7 @@ _isproc:
 	sub		r10, 255
 
 	;; Read 255 bytes from fd and write it into our temporary buffer
-	mov		rax, sys_read
+	mov		rax, SYS_READ
 	mov		rdi, qword [rsp + 8]
 	mov		rsi, r10
 	mov		rdx, 255
@@ -114,7 +96,7 @@ _isproc:
 	mov		qword [rsp + 16], rax
 
 _isproc_close:
-	mov		rax, sys_close
+	mov		rax, SYS_CLOSE
 	mov		rdi, qword [rsp + 8]
 	syscall
 
@@ -177,7 +159,7 @@ _readproc_open:
 	mov		qword [rsp + 328], 0
 	
 	;; Open base directory
-	mov		rax, sys_open
+	mov		rax, SYS_OPEN
 	lea		rdi, [rbp + 24]
 	mov		rsi, 0
 	mov		rdx, 0
@@ -193,7 +175,7 @@ _readproc_open:
 
 _readproc_loop:
 	;; Get directory content
-	mov		rax, sys_getdents64
+	mov		rax, SYS_GETDENTS64
 	mov		rdi, qword [rsp]
 	lea		rsi, [rsp + 8]
 	mov		rdx, 280
@@ -379,3 +361,5 @@ _checkproc:
 	mov		rax, rcx
 	leave
 	ret
+
+%undef CHECKPROC_S

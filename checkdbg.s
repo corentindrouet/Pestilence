@@ -1,37 +1,8 @@
+%define CHECKDBG_S
+
 section	.text
-
-global	_checkdbg
-
-;; -----------------------------------------------------------------------------------
-;; DEBUG
-;; -----------------------------------------------------------------------------------
-_debug_dbgin:
-	.string db 'Tracing session detected. Exiting !', 10, 0
-	.length equ $ - _debug_dbgin.string
-
-_debug_dbgout:
-	.string db 'No tracing session detected...', 10, 0
-	.length equ $ - _debug_dbgout.string
-
-_pdebug_dbgin:
-	enter	0, 0
-	mov		rax, 1
-	mov		rdi, 1
-	lea		rsi, [rel _debug_dbgin.string]
-	mov		rdx, _debug_dbgin.length
-	syscall
-	leave
-	ret
-
-_pdebug_dbgout:
-	enter	0, 0
-	mov		rax, 1
-	mov		rdi, 1
-	lea		rsi, [rel _debug_dbgout.string]
-	mov		rdx, _debug_dbgout.length
-	syscall
-	leave
-	ret
+	global	_checkdbg
+	%include "pestilence.lst"
 
 ;; -----------------------------------------------------------------------------------
 ;; NAME
@@ -45,17 +16,14 @@ _pdebug_dbgout:
 ;;		found, this function returns 1, 0 otherwise.
 ;; -----------------------------------------------------------------------------------
 _checkdbg:
-	enter	0, 0
-	push	rdi
-	push	rsi
-	push	rdx
-	push	r10
+	;; Save up registers
+	enter	16, 0
 
 	;; Calling ptrace(PTRACE_TRACEME)
-	mov		rax, 101
-	mov		rdi, 0
+	mov		rax, SYS_PTRACE
+	mov		rdi, PTRACE_TRACEME
 	mov		rsi, 0
-	mov		rdx, 0
+	mov		rdx, 1
 	mov		r10, 0
 	syscall
 
@@ -65,25 +33,16 @@ _checkdbg:
 	jmp		_checkdbg_true
 
 _checkdbg_true:
-	;; Debug
-	call	_pdebug_dbgout
-	
-	;; Return value
 	mov		rax, 0
 	jmp		_checkdbg_end
 
 _checkdbg_false:
-	;; Debug
-	call	_pdebug_dbgin
-	
-	;; Return value
 	mov		rax, 1
 	jmp		_checkdbg_end
 
 _checkdbg_end:
-	pop		r10
-	pop		rdx
-	pop		rsi
-	pop		rdi
+	;; Restore registers
 	leave
 	ret
+
+%undef CHECKDBG_S
