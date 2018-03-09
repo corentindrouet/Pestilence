@@ -5,7 +5,6 @@ section .text
 	global _read_dir
 	global _encrypted_part_start
 	global _verif
-	global _ft_strlen
 	global _continue_normaly
 
 _encrypted_part_start:
@@ -491,22 +490,6 @@ _end_ret:
 ;; DESCRIPTION
 ;;		Returns the length in byte of the string pointed by s
 ;; --------------------------------------------------------------------------------------------
-
-_ft_strlen: 
-	enter	16, 0
-	xor		rax, rax
-	mov		rbx, rdi
-	cmp		rdi, 0
-	je		_strlen_end
-	mov		rcx, -1
-	cld
-	repne	scasb
-	sub		rdi, rbx
-	mov		rax, rdi
-	sub		rax, 1
-_strlen_end:
-	leave
-	ret
 
 ; Here is our verif code
 _verif:

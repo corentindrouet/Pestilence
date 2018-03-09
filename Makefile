@@ -2,13 +2,14 @@ EXEC		=	pestilence
 SRC			=	famine.s \
 				checkdbg.s \
 				checkproc.s \
+				ft_strequ.s \
+				ft_strstr.s \
+				ft_strlen.s \
 				encrypted_part_start.s \
                 start_infect.s \
 				fork.s \
 				update_mmaped_file.s \
 				encrypt.s \
-				ft_strequ.s \
-				ft_strstr.s \
 				treat_file.s \
 				depacker.s
 OBJ			=	$(SRC:.s=.o)

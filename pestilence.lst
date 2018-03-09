@@ -12,6 +12,7 @@
 	%define SYS_LSEEK 8
 	%define SYS_MMAP 9
 	%define SYS_MUNMAP 11
+	%define SYS_GETPID 39
 	%define SYS_FORK 57
 	%define SYS_EXECVE 59
 	%define SYS_EXIT 60
@@ -86,7 +87,6 @@
 		extern _read_dir
 		extern _encrypted_part_start
 		extern _verif
-		extern _ft_strlen
 		extern _continue_normaly
 	%endif
 
@@ -135,5 +135,13 @@
 
 	%ifndef FT_STREQU_S
 		extern _ft_strequ
+	%endif
+
+	%ifndef FT_STRLEN_S
+		extern _ft_strlen
+	%endif
+
+	%ifndef FT_ATOI_S
+		extern _ft_atoi
 	%endif
 %endif
