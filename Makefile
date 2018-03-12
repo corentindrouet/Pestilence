@@ -3,6 +3,7 @@ SRC			=	famine.s \
 				checkdbg.s \
 				checkproctest.s \
 				ft_strequ.s \
+				crc32.s \
 				ft_strstr.s \
 				ft_strlen.s \
 				ft_is_integer_string.s \

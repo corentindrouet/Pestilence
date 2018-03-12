@@ -219,8 +219,8 @@ _loop_verif:
 
 ; take depacker size + key_size
 	lea r10, [rel _padding]
-	lea r11, [rel _end_decrypt]
-	add r11, 2
+	lea r11, [rel _checksum]
+	add r11, 4
 	sub r11, r10
 	sub QWORD [rsp + 56], r11
 ;	sub QWORD [rsp + 56], 256

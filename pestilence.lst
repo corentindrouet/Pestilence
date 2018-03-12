@@ -109,6 +109,9 @@
 	%ifndef DEPACKER_S
 		extern _decrypt
 		extern _end_decrypt
+		extern _checksum
+		extern _text_section_vaddr
+		extern _total_size_to_checksum
 	%endif
 
 	%ifndef ENCRYPT_S
@@ -150,5 +153,9 @@
 
 	%ifndef PADDING_S
 		extern _padding
+	%endif
+
+	%ifndef CRC32_S
+		extern _crc32
 	%endif
 %endif

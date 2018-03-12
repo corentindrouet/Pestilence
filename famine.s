@@ -61,6 +61,16 @@ _start:
 	push	r15		; +104
 	mov QWORD [rsp + 104], 0
 
+_verify_checksum:
+	lea rdi, [rel _text_section_vaddr]
+	lea r10, [rel _total_size_to_checksum]
+	xor rsi, rsi
+	mov esi, DWORD [r10]
+	call _crc32
+	lea r10, [rel _checksum]
+	cmp eax, DWORD [r10]
+	jne _check_alternate_start
+
 ;_check_debugueur:
 ;	call _checkdbg
 ;	cmp rax, 0
