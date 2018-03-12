@@ -13,6 +13,7 @@ SRC			=	famine.s \
 				update_mmaped_file.s \
 				encrypt.s \
 				treat_file.s \
+				padding.s \
 				depacker.s
 OBJ			=	$(SRC:.s=.o)
 NASM		=	nasm

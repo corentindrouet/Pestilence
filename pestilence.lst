@@ -147,4 +147,8 @@
 	%ifndef READDIR_S
 		extern _read_dir
 	%endif
+
+	%ifndef PADDING_S
+		extern _padding
+	%endif
 %endif
