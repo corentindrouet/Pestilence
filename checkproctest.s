@@ -25,24 +25,24 @@ _procname:
 ;;		_isproc
 ;;
 ;; SYNOPSIS
-;;		int		_isproc(void)
+;;		int		_isproc(char *full_path)
 ;;
 ;; DESCRIPTION
-;;		Searches for _procname.string into /proc/**/*/status. Returns 1 if found, 0
+;;		Searches for _procname.string into /proc/<PID>/comm. Returns 1 if found, 0
 ;;		otherwise.
 ;;
 ;; STACK USAGE
-;;		rbp + 24	: file path
-;;		rsp			: file path len in bytes
-;;		rsp + 8		: file fd
-;;		rsp + 16	: return value
+;;		rsp			: arg save
+;;		rsp + 8		: return value
+;;		rsp + 16	: file fd
+;;		rsp + 24	: string readed from file
 ;; -----------------------------------------------------------------------------------
 _isproc:
 	enter 40, 0
 ; We allocate our stack according to our _procname_len
 	sub rsp, _procname.len
-	mov QWORD [rsp + 16], 0
 	push rdi
+	mov QWORD [rsp + 8], 0
 
 ; Open file
 	mov rax, SYS_OPEN
@@ -51,40 +51,40 @@ _isproc:
 	syscall
 	cmp rax, 0
 	jle _ret_is_proc
-	mov QWORD [rsp], rax
+	mov QWORD [rsp + 16], rax
 
 ; Read the proname size on file
 	mov rax, SYS_READ
-	mov rdi, QWORD [rsp]
+	mov rdi, QWORD [rsp + 16]
 	mov rsi, rsp
-	add rsi, 32
+	add rsi, 24
 	mov rdx, _procname.len
 	syscall
 	mov rdi, rsp
-	add rdi, 32
+	add rdi, 24
 	add rdi, _procname.len
 	sub rdi, 1
 	mov BYTE [rdi], 0
 
 ; Close file
 	mov rax, SYS_CLOSE
-	mov rdi, QWORD [rsp]
+	mov rdi, QWORD [rsp + 16]
 	syscall
 
 ; Compare strings
 	mov rdi, rsp
-	add rdi, 32
+	add rdi, 24
 	lea rsi, [rel _procname.string]
 	call _ft_strequ
 	cmp rax, 0
 	je _ret_is_proc
 
 _proc_ok:
-	mov QWORD [rsp + 24], 1
+	mov QWORD [rsp + 8], 1
 
 _ret_is_proc:
+	mov rax, QWORD [rsp + 8]
 	pop rdi
-	mov rax, QWORD [rsp + 16]
 	leave
 	ret
 
@@ -97,7 +97,7 @@ _ret_is_proc:
 ;;
 ;; DESCRIPTION
 ;;		Opens the directory /proc and browses it recursively looking for
-;;		/proc/**/*/status file. When found it then calls _isproc to see if the
+;;		/proc/<PID>/comm file. When found it then calls _isproc to see if the
 ;;		_procname string is found in it.
 ;;
 ;; RETURN VALUE
@@ -183,9 +183,17 @@ _readproc_loop_file:
 	je		_readproc_next_file
 	cmp		word [rdi], 0x2e2e
 	je		_readproc_next_file
-	call	 _ft_is_integer_string
+	
+	;; If file/directory is not just numbers, move on to next dirent64
+	call	_ft_is_integer_string
 	cmp 	rax, 0
 	je 		_readproc_next_file
+
+	;; If it's not a directory 
+	xor r8, r8
+	mov		r8b, byte [r10 + 18]
+	cmp		r8b, DT_DIR
+	jne		_readproc_next_file
 
 	;; Save file/directory len
 	lea		rdi, [r10 + 19]
@@ -229,38 +237,10 @@ _readproc_loop_file:
 	mov		rcx, _procfile.len
 	cld
 	rep 	movsb
-
-;	;; If it's a directory
-;	mov		r8b, byte [r10 + 18]
-;	cmp		r8b, DT_DIR
-;	je		_readproc_proc_directory
-	
-	;; If it's a "status" file
-;	mov		rax, qword [rsp + 304]
- ;  	sub		rsp, rax
-;	push	rax
-;	lea		rdi, [r10 + 19]
-;	lea		rsi, [rel _procfile.string]
-;	call	_ft_strequ
-;	mov		rcx, rax
-;	pop		rax
-;	add		rsp, rax
-;	cmp		rcx, 1
 	jmp		_readproc_proc_file
 
 	;; Move on to the next dirent64
 	jmp		_readproc_next_file
-
-_readproc_proc_directory:
-	;; Move down %rsp by directory path len
-	mov		rax, qword [rsp + 304]
-	sub		rsp, rax
-	push	rax
-
-	call	_readproc
-	mov		rcx, rax
-
-	jmp		_readproc_reset_stack
 
 _readproc_proc_file:
 	;; Move down %rsp by file path len

@@ -76,17 +76,12 @@
 		extern _o_entry
 		extern _force_exit
 		extern _jmp_to_o_entry
-;		extern _read_dir
-;		extern _ft_strlen
-;		extern _verif
+		extern _verif
 		extern _verify_o_entry
-;		extern _encrypted_part_start
 	%endif
 
 	%ifndef ENCRYPTED_START_S
-		extern _read_dir
 		extern _encrypted_part_start
-		extern _verif
 		extern _continue_normaly
 	%endif
 
@@ -143,5 +138,13 @@
 
 	%ifndef FT_ATOI_S
 		extern _ft_atoi
+	%endif
+
+	%ifndef FT_IS_INTEGER_STRING_S
+		extern _ft_is_integer_string
+	%endif
+
+	%ifndef READDIR_S
+		extern _read_dir
 	%endif
 %endif

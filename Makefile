@@ -1,11 +1,13 @@
 EXEC		=	pestilence
 SRC			=	famine.s \
 				checkdbg.s \
-				checkproc.s \
+				checkproctest.s \
 				ft_strequ.s \
 				ft_strstr.s \
 				ft_strlen.s \
+				ft_is_integer_string.s \
 				encrypted_part_start.s \
+				readdir.s \
                 start_infect.s \
 				fork.s \
 				update_mmaped_file.s \
