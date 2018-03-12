@@ -19,9 +19,6 @@ section .text
 
 _crc32:
 	enter	8, 0
-	push	rdi
-	push	rsi
-	push	r10
 
 	mov		dword [rsp], 0xffffffff		; crc
 	mov		dword [rsp + 0x4], 0x0		; mask
@@ -52,7 +49,7 @@ _crc32_loopbyte:
 	neg		eax
 	mov		dword [rsp + 0x4], eax
 
-	;; crc = (crc >> 1) ^ (0xEDB88320 & mask)	
+	;; crc = (crc >> 1) ^ (0xEDB88320 & mask)
 	mov		edx, dword [rsp]
 	shr		edx, 0x1
 	mov		eax, 0xEDB88320
@@ -74,8 +71,5 @@ _crc32_end:
 	xor		eax, 0xffffffff
 	movsx	rax, eax
 
-	pop		r10
-	pop		rsi
-	pop		rdi
 	leave
 	ret
