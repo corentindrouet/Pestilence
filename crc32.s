@@ -64,6 +64,7 @@ _crc32_loopbyte:
 _crc32_nextbyte:
 	;; ptr += 1
 	dec		rsi
+	inc		rdi
 	jmp		_crc32_getbyte
 
 _crc32_end:
