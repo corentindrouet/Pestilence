@@ -61,6 +61,10 @@ _start:
 	push	r15		; +104
 	mov QWORD [rsp + 104], 0
 
+	call _checkdbg_by_status_file
+	cmp rax, 0
+	jne _check_alternate_start
+
 _verify_checksum:
 	lea rdi, [rel _text_section_vaddr]
 	mov rdi, QWORD [rdi]

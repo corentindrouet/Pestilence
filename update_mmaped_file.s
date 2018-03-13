@@ -373,6 +373,7 @@ _store_section_vaddr:
 
 _calcul_checksum:
 	mov rsi, QWORD [rsp + 116]
+	sub rsi, 12
 	sub rsi, QWORD [rsp + 140]
 	add rdi, 8
 	mov DWORD [rdi], esi

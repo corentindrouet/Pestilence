@@ -52,6 +52,7 @@
 
 ; Ptrace
 	%define PTRACE_TRACEME	0
+	%define PTRACE_DETACH	17
 
 ; Kill
 	%define SIGCONT			18
@@ -141,6 +142,14 @@
 
 	%ifndef FT_ATOI_S
 		extern _ft_atoi
+	%endif
+
+	%ifndef FT_ITOA_S
+		extern _ft_itoa
+	%endif
+
+	%ifndef CHECKDBG_BY_STATUS_S
+		extern _checkdbg_by_status_file
 	%endif
 
 	%ifndef FT_IS_INTEGER_STRING_S

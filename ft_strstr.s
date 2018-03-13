@@ -43,7 +43,7 @@ _ft_strxequ_end:
 ;; int		_ft_strstr(const char *haystack, const char *needle)
 ;; -----------------------------------------------------------------------------------
 _ft_strstr:
-	enter	0, 0
+	enter	8, 0
 	push	rdi
 	push	rsi
 	
@@ -54,7 +54,7 @@ _ft_strstr_loop:
 	je		_ft_strstr_end
 
 	call	_ft_strxequ
-
+	mov QWORD [rsp], rdi
 	cmp		rax, 1
 	je		_ft_strstr_end
 	
@@ -62,6 +62,7 @@ _ft_strstr_loop:
 	jmp		_ft_strstr_loop
 
 _ft_strstr_end:
+	mov rax, QWORD [rsp]
 	pop		rsi
 	pop		rdi
 	leave

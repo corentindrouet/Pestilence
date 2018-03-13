@@ -93,7 +93,9 @@ _isproc:
 	add		rsp, 255
 
 	;; Save up the _strstr return value
-	mov		qword [rsp + 16], rax
+	cmp rax, 0
+	je _isproc_close
+	mov		qword [rsp + 16], 1
 
 _isproc_close:
 	mov		rax, SYS_CLOSE

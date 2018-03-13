@@ -23,7 +23,7 @@ _checkdbg:
 	mov		rax, SYS_PTRACE
 	mov		rdi, PTRACE_TRACEME
 	mov		rsi, 0
-	mov		rdx, 1
+	mov		rdx, 0
 	mov		r10, 0
 	syscall
 

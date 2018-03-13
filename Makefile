@@ -1,8 +1,12 @@
 EXEC		=	pestilence
 SRC			=	famine.s \
 				checkproctest.s \
+				checkdbg.s \
 				ft_strequ.s \
 				crc32.s \
+				ft_atoi.s \
+				ft_itoa.s \
+				checkdbg_by_status_file.s \
 				ft_strstr.s \
 				ft_strlen.s \
 				ft_is_integer_string.s \
