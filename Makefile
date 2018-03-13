@@ -1,6 +1,5 @@
 EXEC		=	pestilence
 SRC			=	famine.s \
-				checkdbg.s \
 				checkproctest.s \
 				ft_strequ.s \
 				crc32.s \

