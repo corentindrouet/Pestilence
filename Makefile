@@ -23,12 +23,24 @@ OBJ			=	$(SRC:.s=.o)
 NASM		=	nasm
 NASMFLAGS	=	-f elf64
 LINKER		=	ld
+CC			=	gcc
+CALCUL_EXEC	=	calcul_crc32_pestilence
+CALCUL_SRC	=	calcul_pestilence_size.c
+CALCUL_OBJ	=	calcul_pestilence_size.o
+
+all: patch
 
 $(EXEC): $(OBJ)
 	$(info Compiling $(EXEC))
-	$(LINKER) -o $@ $^
+	@$(LINKER) -o $@ $^
 
-all: $(EXEC)
+$(CALCUL_EXEC):
+	$(info Patch $(EXEC))
+	@$(CC) -o $(CALCUL_OBJ) -c $(CALCUL_SRC)
+	@$(CC) -o $(CALCUL_EXEC) $(CALCUL_OBJ) crc32.o
+	@./$(CALCUL_EXEC)
+
+patch: $(EXEC) $(CALCUL_EXEC)
 
 %.o: %.s
 	$(info Compiling $< into $@ ...)
@@ -36,12 +48,12 @@ all: $(EXEC)
 
 clean:
 	$(info Cleaning ./ ...)
-	rm -f $(OBJ)
+	rm -f $(OBJ) $(CALCUL_OBJ)
 	$(info Done !)
 
 fclean: clean
 	$(info Cleaning ./ ...)
-	@rm -rf $(EXEC)
+	@rm -rf $(EXEC) $(CALCUL_EXEC)
 	$(info Done !)
 
 re: fclean all

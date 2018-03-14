@@ -49,7 +49,6 @@ int main(void) {
 	p_vaddr = (void*)seg[i].p_vaddr;
 	size = seg[i].p_filesz - 16;
 	checksum = _crc32(mmaped + seg[i].p_offset, size);
-	printf("%p - %#x - %#x\n", p_vaddr, size, checksum);
 	*(long*)(mmaped + seg[i].p_offset + size) = (long)p_vaddr;
 	*(int*)(mmaped + seg[i].p_offset + size + 8) = size;
 	*(unsigned int*)(mmaped + seg[i].p_offset + size + 12) = checksum;
