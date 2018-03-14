@@ -83,7 +83,7 @@ _create_string_path:
 	mov BYTE [rdi], 0
 
 _open_path:
-	mov QWORD [rsp + 32], 0
+	mov QWORD [rsp + 32], 1
 	mov rax, SYS_OPEN
 	lea rdi, [rsp + 40]
 	mov rsi, O_RDONLY
@@ -117,8 +117,8 @@ _find_str_on_buff:
 	call _ft_atoi
 	mov QWORD [rsp + 16], rax
 	cmp QWORD [rsp + 16], 0
-	je _close
-	mov QWORD [rsp + 32], 1
+	jne _close
+	mov QWORD [rsp + 32], 0
 
 _close:
 	mov rax, SYS_CLOSE
