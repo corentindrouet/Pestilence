@@ -4,23 +4,6 @@
 
 section .text
 	global _encrypt_zone
-
-;_ft_strlen:
-;	enter 16, 0
-;	xor rax, rax
-;	cmp rdi, 0
-;	je _ret_len
-;	xor rcx, rcx
-;	dec rcx
-;	cld
-;	repne scasb
-;	inc rcx
-;	not rcx
-;	mov rax, rcx
-;
-;_ret_len:
-;	leave
-;	ret
 	
 _u_random:
 	.string db '/dev/urandom', 0
@@ -33,8 +16,7 @@ _get_random_key:
 	lea rdi, [rel _u_random.string]
 	mov rsi, O_RDONLY
 	syscall
-	cmp rax, 0
-	jle _ret_random_key
+; Here we don't check for now if the open worked, we just store fd on stack
 	mov QWORD [rsp + 8], rax
 
 _mmap_key:
@@ -48,9 +30,14 @@ _mmap_key:
 	syscall
 	test rax, rax
 	jz _close_file
+; Now we know if we have our mmap, and our fd opened
 	mov QWORD [rsp + 16], rax
+; If our fd is valid, we get our key on /dev/urandom. Else, we get it with timestamp
+	cmp QWORD [rsp + 8], 0
+	jle _random_key_from_stack
 
-	.loop cmp QWORD [rsp], 256
+_loop_read:
+	cmp QWORD [rsp], 256
 	jge _close_file
 	mov rax, SYS_READ
 	mov rdi, QWORD [rsp + 8]
@@ -62,7 +49,20 @@ _mmap_key:
 	mov rdi, QWORD [rsp + 16]
 	call _ft_strlen
 	mov QWORD [rsp], rax
-	jmp _mmap_key.loop
+	jmp _loop_read
+
+_random_key_from_stack:
+	.init xor rcx, rcx
+	mov rdi, QWORD [rsp + 16]
+	.loop cmp rcx, 256
+	jge _ret_random_key
+	rdtsc
+	mov r10, 256
+	xor rdx, rdx
+	div r10
+	mov BYTE [rdi + rcx], dl
+	inc rcx
+	jmp .loop	
 	
 _close_file:
 	mov rax, SYS_CLOSE
