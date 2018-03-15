@@ -50,15 +50,12 @@ _fn:
 	nop
 	nop
 	nop
-	nop
 	xor		rcx, rcx
 	nop
 	nop
 	nop
 	nop
-	nop
 	mov		qword [rsp], rdi
-	nop
 	nop
 	nop
 	nop
@@ -71,16 +68,13 @@ _fn:
 	nop
 	nop
 	nop
-	nop
 	cmp		byte [rdi], 0
 	je		_fn.return
 	nop
 	nop
 	nop
 	nop
-	nop
 	inc		rcx
-	nop
 	nop
 	nop
 	nop
@@ -92,9 +86,7 @@ _fn:
 	nop
 	nop
 	nop
-	nop
 	mov		rdi, qword [rsp]
-	nop
 	nop
 	nop
 	nop
@@ -200,7 +192,7 @@ _urand_end:
 ;;		void	_byterpl(void *ptr, size_t len)
 ;;
 ;; DESCRIPTION
-;;		This function searches into the buffer pointed by ptr 5 NOPs (0x90)
+;;		This function searches into the buffer pointed by ptr 4 NOPs (0x90)
 ;;		in a row and replaces them with the values from a dword array.
 ;;
 ;; NOTES
@@ -249,7 +241,7 @@ _byterpl:
 	jmp		_byterpl.check					; loop back
 
 .test:
-	cmp		rcx, 5							; is our counter up to 5 ?
+	cmp		rcx, 4							; is our counter up to 4 ?
 	jge		_byterpl.replace				; great, replace at this offset
 	inc		rdi								; move to next byte
 	jmp		_byterpl.loop					; nope, back to main loop...
