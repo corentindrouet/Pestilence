@@ -11,7 +11,7 @@ section	.text
 ;; Junk instructions
 ;; -----------------------------------------------------------------------------
 %define BYTERPL_MIN		0
-%define BYTERPL_MAX		14
+%define BYTERPL_MAX		16
 
 _bytes:
 dd 0x90f63148,	; xor rsi, rsi
@@ -28,8 +28,13 @@ dd 0x90d62148,	; and rsi, rdx
 dd 0x90f22148,	; and rdx, rsi
 dd 0x909090fc,	; cld
 dd 0x90d68948,	; mov rsi, rdx
-dd 0x90f28948	; mov rdx, rsi
+dd 0x90f28948,	; mov rdx, rsi
+dd 0x90f23948,	; cmp rdx, rsi
+dd 0x90d63948	; cmp rsi, rdx
 
+;; -----------------------------------------------------------------------------
+;; Static strings
+;; -----------------------------------------------------------------------------
 _urandom:
 .string db '/dev/urandom', 0
 
