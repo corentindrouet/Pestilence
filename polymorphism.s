@@ -197,11 +197,10 @@ _urand_end:
 ;;		void	_byterpl(void *ptr, size_t len)
 ;;
 ;; DESCRIPTION
-;;		This function searches into the buffer pointed by ptr 4 NOPs (0x90)
-;;		in a row and replaces them with the values from a dword array.
-;;
-;; NOTES
-;;		For now, it doesn't randomise shit ...
+;;		It searches 4 NOPs (0x90) in a row into the buffer pointed by ptr and 
+;;		replaces them randomly with the values from the _bytes dword array.
+;;		The randomness of the values is ensured by _urand function which gets 
+;;		its input from /dev/urandom.
 ;; ----------------------------------------------------------------------------
 _byterpl:
 .start:
