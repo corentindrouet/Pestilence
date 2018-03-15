@@ -20,16 +20,6 @@ section .text
 	global _force_exit
 	global _jmp_to_o_entry
 	global _verif
-;	extern _decrypt
-;	extern _end_decrypt
-;	extern _treat_file
-;	extern _final_end
-;	extern _thread_create
-;	extern _start_infect
-;	extern _infect_from_root
-;	extern _verify_starting_infect
-;	extern _famine_start_options
-;   extern _fork_before_exec_normaly
 
 _o_entry:
 	dq 0x0000000000000000 
@@ -101,9 +91,6 @@ _check_alternate_by_registers:
 	cmp QWORD [rdi], r10
 	je _force_exit
 	jmp _verify_o_entry
-
-;	cmp rax, 0
-;	jne _verify_o_entry
 
 _check_famine_binary:
 	;; If _o_entry label equals zero, we are into ./famine so we look for eventual arguments

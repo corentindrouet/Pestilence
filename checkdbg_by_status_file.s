@@ -59,6 +59,7 @@ _create_string_path:
 	; mov our pid converted to string after our /
 	mov rsi, rdi
 	mov rdi, QWORD [rsp]
+	mov QWORD [rsi], 0
 	push rsi
 	call _ft_itoa
 	pop rdi
