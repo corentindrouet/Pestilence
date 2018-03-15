@@ -4,7 +4,7 @@ section	.data
 ;; Junk instructions
 ;; -----------------------------------------------------------------------------
 _bytes:
-	dd 0x48f63148, 0x4dd23148, 0x48d2314d
+	dd 0x11111111, 0x22222222, 0x33333333, 0x44444444, 0x55555555, 0x66666666, 0x77777777
 
 section	.text
 	global	_start
@@ -238,29 +238,18 @@ _byterpl:
 	jmp		_byterpl.loop					; nope, back to main loop...
 
 .replace:
-	push	rdi
-	push	rsi
-	push	rdx
-	mov		rdi, 0
-	mov		rsi, 2
-	mov		rdx, qword [rbp - 24]
-	call	_urand
-	mov		qword [rbp - 24], rax
-	pop		rdx
-	pop		rsi
-	pop		rdi
+	push	rdi								; save up
+	push	rsi								; save up
+	push	rdx								; save up
 
-;	cmp		qword [rbp - 24], 2				; did we reach the last index of the replacing bytes ?
-;	je		_byterpl.setzero				; if yes reset index to 0
-;	jmp		_byterpl.setplus				; if no increment to the next one
-;
-;.setzero:
-;	mov		qword [rbp - 24], 0
-;	je		_byterpl.insert
-;
-;.setplus:
-;	add		qword [rbp - 24], 1
-;	je		_byterpl.insert
+	mov		rdi, 0							; index min = 0
+	mov		rsi, 6							; index max = 6
+	mov		rdx, qword [rbp - 24]			; index def = current
+	call	_urand							; call urand
+	mov		qword [rbp - 24], rax			; store result
+	pop		rdx								; restore
+	pop		rsi								; restore
+	pop		rdi								; restore
 
 .insert:
 	mov		rax, qword [rbp - 24]			; get the replacing bytes index
