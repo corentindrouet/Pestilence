@@ -103,7 +103,7 @@ _fn:
 
 ;; -----------------------------------------------------------------------------
 ;; SYNOPSIS
-;;		unsigned int	_urand(uint64_t min, uint64_t max, uint64_t def)
+;;		uint64_t	_urand(uint64_t min, uint64_t max, uint64_t def)
 ;;
 ;; DESCRIPTION
 ;;		Returns an unsigned integer betwen min and max. If open /dev/urandom
