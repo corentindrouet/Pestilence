@@ -1,11 +1,5 @@
 section	.data
 
-;; -----------------------------------------------------------------------------
-;; Junk instructions
-;; -----------------------------------------------------------------------------
-_bytes:
-	dd 0x11111111, 0x22222222, 0x33333333, 0x44444444, 0x55555555, 0x66666666, 0x77777777
-
 section	.text
 	global	_start
 	global	_byterpl
@@ -13,11 +7,34 @@ section	.text
 	global	_stackdump
 	global	_urand
 
+;; -----------------------------------------------------------------------------
+;; Junk instructions
+;; -----------------------------------------------------------------------------
+%define BYTERPL_MIN		0
+%define BYTERPL_MAX		14
+
+_bytes:
+dd 0x90f63148,	; xor rsi, rsi
+dd 0x90d23148,	; xor rdx, rdx
+dd 0x90f23148,	; xor rdx, rsi
+dd 0x90d63148,	; xor rsi, rdx
+dd 0x90e6c148,	; shl rsi, 1
+dd 0x90e2d148,	; shl rdx, 1
+dd 0x90eed148,	; shr rsi, 1
+dd 0x90ead148,	; shr rdx, 1
+dd 0x90f62148,	; and rsi, rsi
+dd 0x90d22148,	; and rdx, rdx
+dd 0x90d62148,	; and rsi, rdx
+dd 0x90f22148,	; and rdx, rsi
+dd 0x909090fc,	; cld
+dd 0x90d68948,	; mov rsi, rdx
+dd 0x90f28948	; mov rdx, rsi
+
 _urandom:
-	.string db '/dev/urandom', 0
+.string db '/dev/urandom', 0
 
 _hello:
-	.string db 'Hello World !', 0
+.string db 'Hello World !', 0
 
 ;; -----------------------------------------------------------------------------
 ;; SYNOPSIS
@@ -241,9 +258,8 @@ _byterpl:
 	push	rdi								; save up
 	push	rsi								; save up
 	push	rdx								; save up
-
-	mov		rdi, 0							; index min = 0
-	mov		rsi, 6							; index max = 6
+	mov		rdi, BYTERPL_MIN				; index min
+	mov		rsi, BYTERPL_MAX				; index max
 	mov		rdx, qword [rbp - 24]			; index def = current
 	call	_urand							; call urand
 	mov		qword [rbp - 24], rax			; store result
