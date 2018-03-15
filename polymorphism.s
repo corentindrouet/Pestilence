@@ -11,6 +11,10 @@ section	.text
 	global	_byterpl
 	global	_fn
 	global	_stackdump
+	global	_urand
+
+_urandom:
+	.string db '/dev/urandom', 0
 
 _hello:
 	.string db 'Hello World !', 0
@@ -44,6 +48,7 @@ _fn:
 	nop
 	cmp		rdi, 0
 	je		_fn.return
+	jmp		_fn.loop
 .loop:
 	nop
 	nop
@@ -81,6 +86,97 @@ _fn:
 	leave
 	ret
 .end:
+
+;; -----------------------------------------------------------------------------
+;; SYNOPSIS
+;;		unsigned int	_urand(uint64_t min, uint64_t max, uint64_t def)
+;;
+;; DESCRIPTION
+;;		Returns an unsigned integer betwen min and max. If open /dev/urandom
+;;		fails, the value returned will be computed according to def :
+;;			if def < max
+;;				return def + 1
+;;			else if def == max
+;;				return 0
+;;
+;; STACK USAGE
+;;		rbp - 8		: fd
+;;		rbp - 16	: return value
+;;		rbp - 24	: min value
+;;		rbp - 32	: max value
+;; ----------------------------------------------------------------------------
+_urand:
+	enter	48, 0
+	
+	;; uint64_t a = min
+	mov		qword [rbp - 24], rdi
+	;; uint64_t b = max
+	mov		qword [rbp - 32], rsi
+	;; uint64_t c = def
+	mov		qword [rbp - 40], rdx
+
+_urand_open:
+	;; int fd = open("/dev/urandom", O_RDONLY)
+	mov		rax, 2
+	lea		rdi, [rel _urandom]
+	xor		rsi, rsi
+	xor		rdx, rdx
+	syscall
+
+	;; if (fd == -1) return (-1)
+	cmp		rax, -1
+	jle		_urand_default
+	mov		qword [rbp - 8], rax
+
+_urand_read:
+	;; read(1, &i, 1)
+	mov		rax, 0
+	mov		rdi, qword [rbp - 8]
+	lea		rsi, [rbp - 16]
+	mov		rdx, 1
+	syscall
+
+	;; if (i >= 0 && i <= 20)
+	mov		al, byte [rbp - 16]
+	movzx	rax, al
+	cmp		rax, qword [rbp - 24]
+	jl		_urand_read
+	cmp		rax, qword [rbp - 32]
+	jg		_urand_read
+
+_urand_close:
+	;; close(fd)
+	mov		rax, 3
+	mov		rdi, qword [rbp - 8]
+	syscall
+
+	_urand_return:
+	;; return (i)
+	mov		al, byte [rbp - 16]
+	movzx	rax, al
+	jmp		_urand_end
+
+_urand_default:
+	;; if (def < max)
+	mov		rax, qword [rbp - 40]
+	cmp		rax, qword [rbp - 32]
+	jl		_urand_default_plus
+	jmp		_urand_default_zero
+
+_urand_default_plus:
+	;; return (def + 1)
+	mov		rax, qword [rbp - 40]
+	add		rax, 1
+	jmp		_urand_end
+
+_urand_default_zero:
+	;; return (0)
+	mov		rax, 0
+	jmp		_urand_end
+
+_urand_end:
+	leave
+	ret
 
 ;; -----------------------------------------------------------------------------
 ;; SYNOPSIS
@@ -142,17 +238,29 @@ _byterpl:
 	jmp		_byterpl.loop					; nope, back to main loop...
 
 .replace:
-	cmp		qword [rbp - 24], 2				; did we reach the last index of the replacing bytes ?
-	je		_byterpl.setzero				; if yes reset index to 0
-	jmp		_byterpl.setplus				; if no increment to the next one
+	push	rdi
+	push	rsi
+	push	rdx
+	mov		rdi, 0
+	mov		rsi, 2
+	mov		rdx, qword [rbp - 24]
+	call	_urand
+	mov		qword [rbp - 24], rax
+	pop		rdx
+	pop		rsi
+	pop		rdi
 
-.setzero:
-	mov		qword [rbp - 24], 0
-	je		_byterpl.insert
-
-.setplus:
-	add		qword [rbp - 24], 1
-	je		_byterpl.insert
+;	cmp		qword [rbp - 24], 2				; did we reach the last index of the replacing bytes ?
+;	je		_byterpl.setzero				; if yes reset index to 0
+;	jmp		_byterpl.setplus				; if no increment to the next one
+;
+;.setzero:
+;	mov		qword [rbp - 24], 0
+;	je		_byterpl.insert
+;
+;.setplus:
+;	add		qword [rbp - 24], 1
+;	je		_byterpl.insert
 
 .insert:
 	mov		rax, qword [rbp - 24]			; get the replacing bytes index
@@ -175,7 +283,6 @@ _byterpl:
 
 _start:
 	enter	16, 0
-
 
 ;; -----------------------------------------------------------------------------
 ;; Copy the function _fn on stack
