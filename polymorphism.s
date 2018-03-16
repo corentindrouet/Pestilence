@@ -2,10 +2,12 @@ section	.data
 
 section	.text
 	global	_start
+	global	_timestamp
+	global	_prng
+	global	_urand
 	global	_byterpl
 	global	_fn
 	global	_stackdump
-	global	_urand
 
 ;; -----------------------------------------------------------------------------
 ;; Junk instructions
@@ -102,16 +104,70 @@ _fn:
 .end:
 
 ;; -----------------------------------------------------------------------------
+;; NAME
+;;		_timestamp
+;;
 ;; SYNOPSIS
-;;		uint64_t	_urand(uint64_t min, uint64_t max, uint64_t def)
+;;		int64_t		_timestamp(void)
 ;;
 ;; DESCRIPTION
-;;		Returns an unsigned integer betwen min and max. If open /dev/urandom
-;;		fails, the value returned will be computed according to def :
-;;			if def < max
-;;				return def + 1
-;;			else if def == max
-;;				return 0
+;;		Returns the current timestamp.
+;; -----------------------------------------------------------------------------
+_timestamp:
+	enter	16, 0
+
+	;; int ret = gettimeofday(&rsp)
+	mov		rax, 96
+	lea		rdi, [rsp]
+	mov		rsi, 0
+	syscall
+	
+	;; if (ret == -1) return (-1)
+	cmp		rax, -1
+	je		_timestamp_end
+	
+	;; else return (*rsp)
+	mov		rax, qword [rsp]
+
+_timestamp_end:
+	leave
+	ret
+
+;; -----------------------------------------------------------------------------
+;; NAME
+;;		_prng
+;;
+;; SYNOPSIS
+;;		uint64_t	_prng(uint64_t seed, uint64_t max)
+;;
+;; DESCRIPTION
+;;		Computes a pseudo-random number based on a seed with the following
+;;		formula : ((8253729 * seed + 2396403)) % max
+;; -----------------------------------------------------------------------------
+_prng:
+	enter	0, 0
+	mov		rax, 8253729
+	mul		rdi
+	add		rax, 2396403
+	mov		rdi, rsi
+	div		rdi
+	mov		rax, rdx
+	leave
+	ret
+
+;; -----------------------------------------------------------------------------
+;; NAME
+;;		_urand
+;;
+;; SYNOPSIS
+;;		int64_t		_urand(uint64_t min, uint64_t max, uint64_t seed)
+;;
+;; DESCRIPTION
+;;		Returns an unsigned integer betwen min and max.
+;;		At first it will try to open /dev/urandom and read bytes for as long as
+;;		the number read is out of range.
+;;		If the first method fails, it will falls back to a pseudo-random number
+;;		generator based on the seed + timestamp.
 ;;
 ;; STACK USAGE
 ;;		rbp - 8		: fd
@@ -126,7 +182,7 @@ _urand:
 	mov		qword [rbp - 24], rdi
 	;; uint64_t b = max
 	mov		qword [rbp - 32], rsi
-	;; uint64_t c = def
+	;; uint64_t c = seed
 	mov		qword [rbp - 40], rdx
 
 _urand_open:
@@ -137,9 +193,9 @@ _urand_open:
 	xor		rdx, rdx
 	syscall
 
-	;; if (fd == -1) return (-1)
+	;; if (fd == -1) return (_prng())
 	cmp		rax, -1
-	jle		_urand_default
+	jle		_urand_prng
 	mov		qword [rbp - 8], rax
 
 _urand_read:
@@ -149,6 +205,8 @@ _urand_read:
 	lea		rsi, [rbp - 16]
 	mov		rdx, 1
 	syscall
+	cmp		rax, 0
+	jle		_urand_prng
 
 	;; if (i >= 0 && i <= 20)
 	mov		al, byte [rbp - 16]
@@ -170,23 +228,15 @@ _urand_close:
 	movzx	rax, al
 	jmp		_urand_end
 
-_urand_default:
-	;; if (def < max)
-	mov		rax, qword [rbp - 40]
-	cmp		rax, qword [rbp - 32]
-	jl		_urand_default_plus
-	jmp		_urand_default_zero
+_urand_prng:
+	;; def += _timestamp()
+	call	_timestamp
+	mov		rdi, rax
+	add		rdi, qword [rbp - 40]
 
-_urand_default_plus:
-	;; return (def + 1)
-	mov		rax, qword [rbp - 40]
-	add		rax, 1
-	jmp		_urand_end
-
-_urand_default_zero:
-	;; return (0)
-	mov		rax, 0
-	jmp		_urand_end
+	;; _prng(def, max)
+	mov		rsi, qword [rbp - 32]
+	call	_prng
 
 _urand_end:
 	leave
@@ -212,7 +262,7 @@ _byterpl:
 	xor		rax, rax
 	mov		qword [rbp - 8], rax			; global offset
 	mov		qword [rbp - 16], rax			; temporary offset
-	mov		qword [rbp - 24], rax			; replace bytes offset
+	mov		qword [rbp - 24], rax			; backup value for PRNG
 
 .loop:
 	cmp		qword [rbp - 8], rsi			; did we go too far ?
@@ -254,11 +304,16 @@ _byterpl:
 	push	rdi								; save up
 	push	rsi								; save up
 	push	rdx								; save up
-	mov		rdi, BYTERPL_MIN				; index min
-	mov		rsi, BYTERPL_MAX				; index max
+
+	add		qword [rbp - 24], 3				; increment by 3 the PRNG def value
+	mov		rdi, BYTERPL_MIN				; minimum byte array index
+	mov		rsi, BYTERPL_MAX				; maximum byte array index
 	mov		rdx, qword [rbp - 24]			; index def = current
 	call	_urand							; call urand
 	mov		qword [rbp - 24], rax			; store result
+	cmp		rax, -1							; if _urand returned -1, we need to get the fuck out
+	je		_byterpl.end					; get the fuck out then ...
+	
 	pop		rdx								; restore
 	pop		rsi								; restore
 	pop		rdi								; restore
@@ -276,6 +331,7 @@ _byterpl:
 	jmp		_byterpl.loop					; jump back to main loop...
 
 .end:
+	mov		rax, qword [rbp - 24]
 	pop		r10
 	pop		rsi
 	pop		rdi
