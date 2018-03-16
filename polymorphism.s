@@ -43,7 +43,7 @@ _urandom:
 ;;		int64_t		_timestamp(void)
 ;;
 ;; DESCRIPTION
-;;		Returns the current timestamp.
+;;		Returns the current timestamp on success, -1 otherwise.
 ;; -----------------------------------------------------------------------------
 _timestamp:
 	enter	16, 0
@@ -109,13 +109,15 @@ _prng:
 ;; ----------------------------------------------------------------------------
 _urand:
 	enter	48, 0
-	
+
 	;; uint64_t a = min
 	mov		qword [rbp - 24], rdi
 	;; uint64_t b = max
 	mov		qword [rbp - 32], rsi
 	;; uint64_t c = seed
 	mov		qword [rbp - 40], rdx
+	;; uint64_t e = 0
+	mov		qword [rbp - 48], 0
 
 _urand_open:
 	;; int fd = open("/dev/urandom", O_RDONLY)
@@ -131,14 +133,17 @@ _urand_open:
 	mov		qword [rbp - 8], rax
 
 _urand_read:
-	;; read(1, &i, 1)
+	;; ssize_t r = read(1, &i, 1)
 	mov		rax, 0
 	mov		rdi, qword [rbp - 8]
 	lea		rsi, [rbp - 16]
 	mov		rdx, 1
 	syscall
+	
+	;; if (r <= 0) close(fd)
+	mov		qword [rbp - 48], rax
 	cmp		rax, 0
-	jle		_urand_prng
+	jle		_urand_close
 
 	;; if (i >= 0 && i <= 20)
 	mov		al, byte [rbp - 16]
@@ -154,7 +159,10 @@ _urand_close:
 	mov		rdi, qword [rbp - 8]
 	syscall
 
-	_urand_return:
+	cmp		qword [rbp - 48], 0
+	jle		_urand_prng
+
+_urand_return:
 	;; return (i)
 	mov		al, byte [rbp - 16]
 	movzx	rax, al
