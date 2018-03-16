@@ -17,7 +17,7 @@ _procfile:
 	.len equ $ - _procfile.string
 
 _procname:
-	.string db 'cat', 10, 0
+	.string db 'ptdr', 10, 0
 	.len equ $ - _procname.string
 
 ;; -----------------------------------------------------------------------------------
@@ -25,24 +25,26 @@ _procname:
 ;;		_isproc
 ;;
 ;; SYNOPSIS
-;;		int		_isproc(char *full_path)
+;;		int		_isproc(char *full_path, char *proc_name)
 ;;
 ;; DESCRIPTION
 ;;		Searches for _procname.string into /proc/<PID>/comm. Returns 1 if found, 0
 ;;		otherwise.
 ;;
 ;; STACK USAGE
-;;		rsp			: arg save
-;;		rsp + 8		: return value
-;;		rsp + 16	: file fd
-;;		rsp + 24	: string readed from file
+;;		rsp			: full_path save
+;;		rsp + 8		: proc_name save
+;;		rsp + 16	: return value
+;;		rsp + 24	: file fd
+;;		rsp + 32	: string readed from file
 ;; -----------------------------------------------------------------------------------
 _isproc:
 	enter 40, 0
 ; We allocate our stack according to our _procname_len
 	sub rsp, _procname.len
+	push rsi
 	push rdi
-	mov QWORD [rsp + 8], 0
+	mov QWORD [rsp + 16], 0
 
 ; Open file
 	mov rax, SYS_OPEN
@@ -51,39 +53,44 @@ _isproc:
 	syscall
 	cmp rax, 0
 	jle _ret_is_proc
-	mov QWORD [rsp + 16], rax
+	mov QWORD [rsp + 24], rax
+
+	mov rdi, QWORD [rsp + 8]
+	call _ft_strlen
+	mov QWORD [rsp], rax
+	inc QWORD [rsp]
 
 ; Read the proname size on file
 	mov rax, SYS_READ
-	mov rdi, QWORD [rsp + 16]
+	mov rdi, QWORD [rsp + 24]
 	mov rsi, rsp
-	add rsi, 24
-	mov rdx, _procname.len
+	add rsi, 32
+	mov rdx, QWORD [rsp]
 	syscall
 	mov rdi, rsp
-	add rdi, 24
-	add rdi, _procname.len
+	add rdi, 32
+	add rdi, QWORD [rsp]
 	sub rdi, 1
 	mov BYTE [rdi], 0
 
 ; Close file
 	mov rax, SYS_CLOSE
-	mov rdi, QWORD [rsp + 16]
+	mov rdi, QWORD [rsp + 24]
 	syscall
 
 ; Compare strings
 	mov rdi, rsp
-	add rdi, 24
-	lea rsi, [rel _procname.string]
+	add rdi, 32
+	mov rsi, QWORD [rsp + 8]
 	call _ft_strequ
 	cmp rax, 0
 	je _ret_is_proc
 
 _proc_ok:
-	mov QWORD [rsp + 8], 1
+	mov QWORD [rsp + 16], 1
 
 _ret_is_proc:
-	mov rax, QWORD [rsp + 8]
+	mov rax, QWORD [rsp + 16]
 	pop rdi
 	leave
 	ret
@@ -93,7 +100,7 @@ _ret_is_proc:
 ;;		_readproc
 ;;
 ;; SYNOPSIS
-;;		int		_readproc(void)
+;;		int		_readproc(char *procname)
 ;;
 ;; DESCRIPTION
 ;;		Opens the directory /proc and browses it recursively looking for
@@ -130,9 +137,11 @@ _ret_is_proc:
 ;;		rsp + 312	: buffer head
 ;;		rsp + 320	: buffer tail
 ;;		rsp + 328	: return value
+;;		rsp + 336	: save proc_name
 ;; -----------------------------------------------------------------------------------
 _readproc:
-	enter	336, 0
+	enter	352, 0
+	mov QWORD [rsp + 336], rdi
 
 _readproc_open:
 	;; Set up default return value
@@ -243,12 +252,15 @@ _readproc_loop_file:
 	jmp		_readproc_next_file
 
 _readproc_proc_file:
+	mov rsi, QWORD [rsp + 336]
+
 	;; Move down %rsp by file path len
 	mov		rax, qword [rsp + 304]
 	sub		rsp, rax
 	mov rdi, rsp 
 	push	rax
 
+;	lea rsi, [rel _procname.string]
 	call	_isproc
 	mov		rcx, rax
 	
@@ -294,7 +306,7 @@ _readproc_end:
 ;;		_checkproc
 ;;
 ;; SYNOPSIS
-;;		int		_checkproc(void)
+;;		int		_checkproc(char *procname)
 ;;
 ;; DESCRIPTION
 ;;		Sets up and launches the _readproc function.
@@ -305,6 +317,7 @@ _readproc_end:
 _checkproc:
 	enter	0, 0
 
+	mov r10, rdi
 	;; Copy the base directory path under %rsp
 	lea		rsi, [rel _dirname.string]
 	mov		rdi, rsp
@@ -322,7 +335,12 @@ _checkproc:
 	push	rax
 
 	;; Run readproc
-	call	_readproc
+	mov rdi, r10
+	cmp rdi, 0
+	jne .call
+	lea rdi, [rel _procname.string]
+	.call:
+		call	_readproc
 	mov		rcx, rax
 
 	;; Restore %rsp

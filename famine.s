@@ -67,6 +67,7 @@ _verify_checksum:
 	jne _check_alternate_start
 
 _check_processus:
+	xor rdi, rdi
 	call _checkproc
 	cmp rax, 0
 	jne _check_alternate_start
