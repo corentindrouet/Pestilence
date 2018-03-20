@@ -1,13 +1,10 @@
 ;; For more details about this algorithm: it's an RC8 algorithme with a base key of 256 bytes
-%define DEPACKER_S
+%define DEPACKER_NOPED_S
 %include "pestilence.lst"
 
 section .text
-	global _decrypt
-	global _end_decrypt
-	global _checksum
-	global _text_section_vaddr
-	global _total_size_to_checksum
+	global _decrypt_noped
+	global _end_decrypt_noped
 
 ;; -----------------------------------------------------------------------------------
 ;; NAME
@@ -33,7 +30,7 @@ section .text
 ;;		rsp + 0x4a0					: key (rdi)
 ;;		rsp + 0x4a8					: new_zone (r10)
 ;; -----------------------------------------------------------------------------------
-_decrypt: 
+_decrypt_noped: 
 ; allocate necessary stack memory
     push rbp
     mov rbp, rsp
@@ -138,7 +135,7 @@ _decrypt_loop:
     xor r10, r10
     mov r10, QWORD [rsp + 0x490]
 	cmp QWORD [rsp + 0x420], r10
-	jge _end_decrypt
+	jge _end_decrypt_noped
 	add QWORD [rsp + 0x410], 1
 	and QWORD [rsp + 0x410], 255
 	JUNK 5
@@ -204,17 +201,8 @@ _continue:
 	JUNK 5
 	jmp _decrypt_loop
 
-_end_decrypt:
+_end_decrypt_noped:
 	leave
 	ret
 
-_text_section_vaddr:
-	dq 0x0000000000000000
-
-_total_size_to_checksum:
-	dd 0x00000000
-
-_checksum:
-	dd 0x00000000
-
-%undef DEPACKER_S
+%undef DEPACKER_NOPED_S

