@@ -264,7 +264,6 @@ _byterpl_insert:
 	mov		rax, qword [rbp - 24]			; get the replacing bytes index
 	mov		r11, 4
 	mul		r11
-	mov		rax, r11
 	lea		r11, [rel _bytes]
 	add		r11, rax
 ;	lea		r11, [rel _bytes + rax * 4]		; get the value at this index
