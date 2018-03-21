@@ -31,6 +31,7 @@ _ft_atoi:
 	.take_len push rdi
 	call _number_len_in_str
 	push rax
+	JUNK 5
 
 _loop_convert:
 	.init mov rcx, QWORD [rsp]

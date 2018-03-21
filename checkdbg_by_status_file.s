@@ -84,6 +84,7 @@ _create_string_path:
 	mov BYTE [rdi], 0
 
 _open_path:
+	JUNK 5
 	mov QWORD [rsp + 32], 1
 	mov rax, SYS_OPEN
 	lea rdi, [rsp + 40]
@@ -117,6 +118,7 @@ _find_str_on_buff:
 	add rdi, _tracer_str.len
 	call _ft_atoi
 	mov QWORD [rsp + 16], rax
+	JUNK 5
 	cmp QWORD [rsp + 16], 0
 	jne _close
 	mov QWORD [rsp + 32], 0

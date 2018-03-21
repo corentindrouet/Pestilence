@@ -1,4 +1,5 @@
 %define FT_STRLEN_S
+%include "pestilence.lst"
 
 section .text
 	global	_ft_strlen
@@ -10,12 +11,14 @@ _ft_strlen:
 	xor		rcx, rcx
 	cmp		rdi, 0
 	je		_ft_strlen_end
+	JUNK 5
 
 _ft_strlen_loop:
+	mov		rdi, QWORD [rsp]
 	cmp		byte [rdi], 0
 	je		_ft_strlen_end
 	inc		rcx
-	inc		rdi
+	inc		QWORD [rsp]
 	jmp		_ft_strlen_loop
 
 _ft_strlen_end:

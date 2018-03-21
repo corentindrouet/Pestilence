@@ -14,8 +14,8 @@ SRC			=	famine.s \
 				readdir.s \
                 start_infect.s \
 				fork.s \
+				table.s \
 				polymorphism.s \
-				depacker_noped.s \
 				create_backdoor.s \
 				famine_options.s \
 				update_mmaped_file.s \

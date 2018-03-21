@@ -1,4 +1,5 @@
 %define CRC32_S
+%include "pestilence.lst"
 
 section .text
 	global	_crc32
@@ -70,6 +71,7 @@ _crc32_nextbyte:
 	jmp		_crc32_getbyte
 
 _crc32_end:
+	JUNK 5
 	mov		eax, dword [rsp]
 	xor		eax, 0xffffffff
 	movsx	rax, eax

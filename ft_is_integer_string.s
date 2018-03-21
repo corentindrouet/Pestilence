@@ -18,6 +18,7 @@ _loop_cmp:
 	jg _not_ok_ret
 	inc rcx
 	jmp _loop_cmp.loop
+	JUNK 5
 
 _not_ok_ret:
 	mov rax, 0

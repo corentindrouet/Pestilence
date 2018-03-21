@@ -46,7 +46,6 @@ _decrypt:
 	JUNK 5
 	mov QWORD [rsp + 0x420], 0
 	mov QWORD [rsp + 0x428], 4
-	JUNK 5
 
 _init_table:
 ; while (rcx < 256) {
@@ -60,7 +59,6 @@ _init_table:
     mul QWORD [rsp + 0x428]
 	mov rcx, QWORD [rsp + 0x420]
     mov DWORD [rsp + rax], ecx
-	JUNK 5
 	inc QWORD [rsp + 0x420]
     jmp _init_table
 
@@ -122,16 +120,13 @@ _swap:
     sub DWORD [rdi], r11d
 	JUNK 5
     inc QWORD [rsp + 0x420]
-	JUNK 5
     jmp _sorting
 
 _init_decrypt_loop:
 	mov QWORD [rsp + 0x410], 0
-	JUNK 5
 	mov QWORD [rsp + 0x418], 0
 	mov QWORD [rsp + 0x420], 0
 	mov QWORD [rsp + 0x428], 4
-	JUNK 5
 	xor rcx, rcx
 
 _decrypt_loop:
@@ -184,7 +179,6 @@ _continue:
 	add QWORD [rsp + 0x418], r11
 	and QWORD [rsp + 0x418], 255
 	xor r11, r11
-	JUNK 5
 	mov r11, QWORD [rsp + 0x418]
     xor rax, rax
     mov rax, r11

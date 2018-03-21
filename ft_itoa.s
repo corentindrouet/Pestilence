@@ -1,9 +1,10 @@
 %define FT_ITOA_S
+%include "pestilence.lst"
 
 section .text
 	global _ft_itoa
 
-_string:
+_characters:
 	db '0123456789'
 
 ;; -----------------------------------------------------------------------------------
@@ -38,8 +39,9 @@ _check_nb:
 	jmp _exit
 
 _concatene_character:
+	JUNK 5
 	mov rdi, QWORD [rsp + 8]
-	lea rsi, [rel _string]
+	lea rsi, [rel _characters]
 	mov r11, QWORD [rsp]
 	xor r10, r10
 	mov r10b, BYTE [rsi + r11]

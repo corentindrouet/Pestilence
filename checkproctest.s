@@ -59,6 +59,7 @@ _isproc:
 	call _ft_strlen
 	mov QWORD [rsp], rax
 	inc QWORD [rsp]
+	JUNK 5
 
 ; Read the proname size on file
 	mov rax, SYS_READ
@@ -161,6 +162,7 @@ _readproc_open:
 	lea		rdi, [rbp + 24]
 	call	_ft_strlen
 	mov		qword [rsp + 288], rax
+	JUNK 5
 
 _readproc_loop:
 	;; Get directory content
@@ -252,6 +254,7 @@ _readproc_loop_file:
 	jmp		_readproc_next_file
 
 _readproc_proc_file:
+	JUNK 5
 	mov rsi, QWORD [rsp + 336]
 
 	;; Move down %rsp by file path len
@@ -273,6 +276,7 @@ _readproc_reset_stack:
 
 	;; If string was not found in file move on to the next dirent64
 	mov		qword [rsp + 328], rcx
+	JUNK 5
 	cmp		qword [rsp + 328], 0
 	je		_readproc_next_file
 	
@@ -297,6 +301,7 @@ _readproc_close:
 
 _readproc_end:
 	;; Set up return value, destroy stack frame and return
+	JUNK 5
 	mov		rax, qword [rsp + 328]
 	leave
 	ret

