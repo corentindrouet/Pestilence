@@ -208,13 +208,13 @@ _byterpl:
 _byterpl_loop:
 	cmp		qword [rbp - 8], rsi			; did we go too far ?
 	jge		_byterpl_end					; yeup, we're done
-	
+
 	cmp		byte [rdi], 0x90				; if we found a 0x90
 	je		_byterpl_init					; check if we have 5 in a row
 
 	inc		rdi								; move to the next byte
 	inc		qword [rbp - 8]					; increment global offset
-	
+
 	jmp		_byterpl_loop					; check next byte
 
 _byterpl_init:
@@ -262,7 +262,12 @@ _byterpl_replace:
 
 _byterpl_insert:
 	mov		rax, qword [rbp - 24]			; get the replacing bytes index
-	lea		r11, [rel _bytes + rax * 4]		; get the value at this index
+	mov		r11, 4
+	mul		r11
+	mov		rax, r11
+	lea		r11, [rel _bytes]
+	add		r11, rax
+;	lea		r11, [rel _bytes + rax * 4]		; get the value at this index
 	mov		r11d, dword [r11]				; save it up
 
 	mov		dword [rdi], r11d				; replace content of this offset
