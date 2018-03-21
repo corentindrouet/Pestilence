@@ -292,12 +292,12 @@ _copy_unencrypted_part:
 
 ; Then we run _byterpl(depacker start in destination, depacker size);
 ; to replace nop sleds by junks instructions
-	lea rcx, [rel _string]
-	lea rsi, [rel _encrypted_part_start]
-	sub rsi, rcx
-	mov rdi, QWORD [rsp + 108]
-	add rdi, QWORD [rsp + 116]
-	call _byterpl
+;	lea rcx, [rel _string]
+;	lea rsi, [rel _encrypted_part_start]
+;	sub rsi, rcx
+;	mov rdi, QWORD [rsp + 108]
+;	add rdi, QWORD [rsp + 116]
+;	call _byterpl
 
 ; Incremente our index in our destination mmap
 	lea rsi, [rel _string]
@@ -349,11 +349,12 @@ _inject_modified_depacker:
 
 ; Then we run _byterpl(depacker start in destination, depacker size);
 ; to replace nop sleds by junks instructions
-	lea rcx, [rel _decrypt]
-	lea rsi, [rel _end_decrypt]
+	lea rcx, [rel _o_entry]
+	lea rsi, [rel _start]
 	sub rsi, rcx
 	mov rdi, QWORD [rsp + 108]
-	add rdi, QWORD [rsp + 116]
+	add rdi, rsi
+	add rdi, QWORD [rsp + 72]
 	call _byterpl
 
 ; Incremente our index in our destination mmap

