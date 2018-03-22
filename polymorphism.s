@@ -232,6 +232,7 @@ _byterpl_replace:
 	mov		qword [rbp - 24], rax			; store result
 	cmp		rax, -1							; if _urand returned -1, we need to get the fuck out
 	je		_byterpl_end					; get the fuck out then ...
+
 	
 	pop		rdx								; restore
 	pop		rsi								; restore
@@ -241,22 +242,17 @@ _byterpl_insert:
 	mov		rax, qword [rbp - 24]			; get the replacing bytes index
 	mov		r11, 4
 	mul		r11
+
 	lea		r11, [rel _bytes]
 	add		r11, rax
-;	lea		r11, [rel _bytes + rax * 4]		; get the value at this index
-	mov		r11d, dword [r11]				; save it up
 
-	mov		dword [rdi], r11d				; replace content of this offset
+	mov		r10, 0
+	mov		r10d, dword [r11]				; save it up
+
+	mov		dword [rdi], r10d				; replace content of this offset
 
 	add		qword [rbp - 8], 4				; move global offset +5
 	inc 	rsi
-	push rsi
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, QWORD [rsp + 16]
-	mov rdx, 8
-	syscall
-	pop rsi
 	
 	jmp		_byterpl_loop					; jump back to main loop...
 

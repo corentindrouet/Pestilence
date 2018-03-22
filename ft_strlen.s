@@ -7,11 +7,11 @@ section .text
 _ft_strlen:
 	enter	0, 0
 	push	rdi
+	JUNK 5
 	xor		rax, rax
 	xor		rcx, rcx
 	cmp		rdi, 0
 	je		_ft_strlen_end
-	JUNK 5
 
 _ft_strlen_loop:
 	mov		rdi, QWORD [rsp]

@@ -11,6 +11,9 @@ _ft_strequ:
 	push	r10
 
 	JUNK 5
+    mov     rdi, QWORD [rsp + 16]
+    mov     rsi, QWORD [rsp + 8]
+    mov     r10, QWORD [rsp]
 	xor		rax, rax
 	mov		rax, 1
 
