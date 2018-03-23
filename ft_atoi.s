@@ -4,21 +4,8 @@
 section .text
 	global _ft_atoi
 
-_number_len_in_str:
-	enter 24, 0
-	mov QWORD [rsp], 0
-	.loop cmp BYTE [rdi], '0'
-	jl _ret_num_len
-	cmp BYTE [rdi], '9'
-	jg _ret_num_len
-	inc QWORD [rsp]
-	inc rdi
-	jmp .loop
-
-_ret_num_len:
-	mov rax, QWORD [rsp]
-	leave
-	ret
+_opcode:
+	dq 0x0404040404040404
 
 _ft_atoi:
 	enter 32, 0
@@ -57,6 +44,22 @@ _bp2:
 
 _ret_value:
 	mov rax, QWORD [rsp + 16]
+	leave
+	ret
+
+_number_len_in_str:
+	enter 24, 0
+	mov QWORD [rsp], 0
+	.loop cmp BYTE [rdi], '0'
+	jl _ret_num_len
+	cmp BYTE [rdi], '9'
+	jg _ret_num_len
+	inc QWORD [rsp]
+	inc rdi
+	jmp .loop
+
+_ret_num_len:
+	mov rax, QWORD [rsp]
 	leave
 	ret
 

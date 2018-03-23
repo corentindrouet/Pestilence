@@ -10,6 +10,7 @@ SRC			=	famine.s \
 				ft_strstr.s \
 				ft_strlen.s \
 				ft_is_integer_string.s \
+				jmp_to_function.s \
 				encrypted_part_start.s \
 				readdir.s \
                 start_infect.s \

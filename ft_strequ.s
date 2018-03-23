@@ -4,6 +4,9 @@
 section	.text
 	global	_ft_strequ
 
+_opcode:
+	dq 0x0202020202020202
+
 _ft_strequ:
 	enter	0, 0
 	push	rdi

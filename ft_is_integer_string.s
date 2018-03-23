@@ -4,6 +4,9 @@
 section .text
 	global _ft_is_integer_string
 
+_opcode:
+	dq 0x0909090909090909
+
 _ft_is_integer_string:
 	enter 32, 0
 	push rdi

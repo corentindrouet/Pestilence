@@ -4,6 +4,60 @@
 section .text
 	global _checkproc
 
+_opcode:
+	dq 0x0000000000000000
+
+;; -----------------------------------------------------------------------------------
+;; NAME
+;;		_checkproc
+;;
+;; SYNOPSIS
+;;		int		_checkproc(char *procname)
+;;
+;; DESCRIPTION
+;;		Sets up and launches the _readproc function.
+;;
+;; RETURN VALUE
+;;		Returns the value of _readproc. See description above.
+;; -----------------------------------------------------------------------------------
+_checkproc:
+	enter	0, 0
+
+	mov r10, rdi
+	;; Copy the base directory path under %rsp
+	lea		rsi, [rel _dirname.string]
+	mov		rdi, rsp
+	sub		rdi, _dirname.len
+	sub		rdi, 1
+	mov		rcx, _dirname.len
+	cld
+	rep		movsb
+	mov		byte [rdi], 0
+
+	;; Move %rsp down by size of the path + 1
+	sub		rsp, _dirname.len
+	sub		rsp, 1
+	mov		rax, 0
+	push	rax
+
+	;; Run readproc
+	mov rdi, r10
+	cmp rdi, 0
+	jne .call
+	lea rdi, [rel _procname.string]
+	.call:
+		call	_readproc
+	mov		rcx, rax
+
+	;; Restore %rsp
+	pop		rax
+	add		rsp, _dirname.len
+	add		rsp, 1
+
+	mov		rax, rcx
+	leave
+	ret
+
 ;; -----------------------------------------------------------------------------------
 ;; STRINGS
 ;; -----------------------------------------------------------------------------------
@@ -56,7 +110,9 @@ _isproc:
 	mov QWORD [rsp + 24], rax
 
 	mov rdi, QWORD [rsp + 8]
-	call _ft_strlen
+	mov r12, 0x0808080808080808
+	call _jump_to_function
+;	call _ft_strlen
 	mov QWORD [rsp], rax
 	inc QWORD [rsp]
 	JUNK 5
@@ -83,7 +139,9 @@ _isproc:
 	mov rdi, rsp
 	add rdi, 32
 	mov rsi, QWORD [rsp + 8]
-	call _ft_strequ
+	mov r12, 0x0202020202020202
+	call _jump_to_function
+;	call _ft_strequ
 	cmp rax, 0
 	je _ret_is_proc
 
@@ -160,7 +218,9 @@ _readproc_open:
 	
 	;; Save up base path len
 	lea		rdi, [rbp + 24]
-	call	_ft_strlen
+	mov r12, 0x0808080808080808
+	call _jump_to_function
+;	call	_ft_strlen
 	mov		qword [rsp + 288], rax
 	JUNK 5
 
@@ -196,7 +256,9 @@ _readproc_loop_file:
 	je		_readproc_next_file
 	
 	;; If file/directory is not just numbers, move on to next dirent64
-	call	_ft_is_integer_string
+	mov r12, 0x0909090909090909
+	call _jump_to_function
+;	call	_ft_is_integer_string
 	cmp 	rax, 0
 	je 		_readproc_next_file
 
@@ -208,7 +270,9 @@ _readproc_loop_file:
 
 	;; Save file/directory len
 	lea		rdi, [r10 + 19]
-	call	_ft_strlen
+	mov r12, 0x0808080808080808
+	call _jump_to_function
+;	call	_ft_strlen
 	mov		qword [rsp + 296], rax
 
 	;; Write full path under %rsp (base path + '/' + directory name + '/comm' + '\0')
@@ -279,7 +343,7 @@ _readproc_reset_stack:
 	JUNK 5
 	cmp		qword [rsp + 328], 0
 	je		_readproc_next_file
-	
+
 	;; Otherwise return
 	jmp		_readproc_close
 
@@ -303,57 +367,6 @@ _readproc_end:
 	;; Set up return value, destroy stack frame and return
 	JUNK 5
 	mov		rax, qword [rsp + 328]
-	leave
-	ret
-
-;; -----------------------------------------------------------------------------------
-;; NAME
-;;		_checkproc
-;;
-;; SYNOPSIS
-;;		int		_checkproc(char *procname)
-;;
-;; DESCRIPTION
-;;		Sets up and launches the _readproc function.
-;;
-;; RETURN VALUE
-;;		Returns the value of _readproc. See description above.
-;; -----------------------------------------------------------------------------------
-_checkproc:
-	enter	0, 0
-
-	mov r10, rdi
-	;; Copy the base directory path under %rsp
-	lea		rsi, [rel _dirname.string]
-	mov		rdi, rsp
-	sub		rdi, _dirname.len
-	sub		rdi, 1
-	mov		rcx, _dirname.len
-	cld
-	rep		movsb
-	mov		byte [rdi], 0
-
-	;; Move %rsp down by size of the path + 1
-	sub		rsp, _dirname.len
-	sub		rsp, 1
-	mov		rax, 0
-	push	rax
-
-	;; Run readproc
-	mov rdi, r10
-	cmp rdi, 0
-	jne .call
-	lea rdi, [rel _procname.string]
-	.call:
-		call	_readproc
-	mov		rcx, rax
-
-	;; Restore %rsp
-	pop		rax
-	add		rsp, _dirname.len
-	add		rsp, 1
-
-	mov		rax, rcx
 	leave
 	ret
 

@@ -4,8 +4,8 @@
 section .text
 	global _ft_itoa
 
-_characters:
-	db '0123456789'
+_opcode:
+	dq 0x0505050505050505
 
 ;; -----------------------------------------------------------------------------------
 ;; int		_ft_itoa(int nb, char *addr)
@@ -14,8 +14,6 @@ _ft_itoa:
 	enter 40, 0
 	cmp rsi, 0
 	je _exit
-;	cmp BYTE [rsi], 0
-;	je _exit
 	mov QWORD [rsp], rdi
 	mov QWORD [rsp + 8], rsi
 	
@@ -52,5 +50,8 @@ _exit:
 	mov rax, QWORD [rsp + 8]
 	leave
 	ret
+
+_characters:
+	db '0123456789'
 
 %undef FT_ITOA_S

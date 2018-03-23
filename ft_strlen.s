@@ -4,6 +4,9 @@
 section .text
 	global	_ft_strlen
 
+_opcode:
+	dq 0x0808080808080808
+
 _ft_strlen:
 	enter	0, 0
 	push	rdi

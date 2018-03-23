@@ -1,8 +1,11 @@
 %define CHECKDBG_S
+%include "pestilence.lst"
 
 section	.text
 	global	_checkdbg
-	%include "pestilence.lst"
+
+_opcode:
+	dq 0x0101010101010101
 
 ;; -----------------------------------------------------------------------------------
 ;; NAME

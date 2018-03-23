@@ -205,4 +205,9 @@
 	%ifndef TABLE_S
 		extern _table_offset
 	%endif
+
+	%ifndef JUMP_TO_FUNCTION_S
+		extern _jump_to_function
+		extern _functions_offset_from_start
+	%endif
 %endif

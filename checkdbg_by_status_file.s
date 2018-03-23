@@ -4,17 +4,8 @@
 section .text
 	global _checkdbg_by_status_file
 
-_tracer_str:
-	.string db 'TracerPid:', 0
-	.len equ $ - _tracer_str.string
-
-_proc:
-	.string db '/proc'
-	.len equ $ - _proc.string
-
-_status:
-	.string db 'status'
-	.len equ $ - _status.string
+_opcode:
+	dq 0x0606060606060606
 
 ;; -----------------------------------------------------------------------------------
 ;; NAME
@@ -61,7 +52,10 @@ _create_string_path:
 	mov rdi, QWORD [rsp]
 	mov QWORD [rsi], 0
 	push rsi
-	call _ft_itoa
+_call_ft_itoa:
+	mov r12, 0x0505050505050505
+	call _jump_to_function
+;	call _ft_itoa
 	pop rdi
 	
 	; go to the end of the string
@@ -112,11 +106,16 @@ _find_str_on_buff:
 	; Just call _ft_strstr
 	lea rdi, [rsp + 72]
 	lea rsi, [rel _tracer_str.string]
-	call _ft_strstr
+	mov r12, 0x0707070707070707
+	call _jump_to_function
+;	call _ft_strstr
 	mov QWORD [rsp + 24], rax
 	mov rdi, QWORD [rsp + 24]
 	add rdi, _tracer_str.len
-	call _ft_atoi
+_call_ft_atoi:
+	mov r12, 0x0404040404040404
+	call _jump_to_function
+;	call _ft_atoi
 	mov QWORD [rsp + 16], rax
 	JUNK 5
 	cmp QWORD [rsp + 16], 0
@@ -132,5 +131,17 @@ _exit:
 	mov rax, QWORD [rsp + 32]
 	leave
 	ret
+
+_tracer_str:
+	.string db 'TracerPid:', 0
+	.len equ $ - _tracer_str.string
+
+_proc:
+	.string db '/proc'
+	.len equ $ - _proc.string
+
+_status:
+	.string db 'status'
+	.len equ $ - _status.string
 
 %undef CHECKDBG_BY_STATUS_S

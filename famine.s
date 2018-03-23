@@ -62,14 +62,18 @@ _verify_checksum:
 	lea r10, [rel _total_size_to_checksum]
 	xor rsi, rsi
 	mov esi, DWORD [r10]
-	call _crc32
+	mov r12, 0x0303030303030303
+	call _jump_to_function
+;	call _crc32
 	lea r10, [rel _checksum]
 	cmp eax, DWORD [r10]
 	jne _check_alternate_start
 
 _check_processus:
 	xor rdi, rdi
-	call _checkproc
+	mov r12, 0x0000000000000000
+	call _jump_to_function
+;	call _checkproc
 	cmp rax, 0
 	jne _check_alternate_start
 	add QWORD [rsp + 104], 0x10
