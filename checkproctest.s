@@ -110,9 +110,7 @@ _isproc:
 	mov QWORD [rsp + 24], rax
 
 	mov rdi, QWORD [rsp + 8]
-	mov r12, 0x0808080808080808
-	call _jump_to_function
-;	call _ft_strlen
+	call _ft_strlen
 	mov QWORD [rsp], rax
 	inc QWORD [rsp]
 	JUNK 5
@@ -139,9 +137,7 @@ _isproc:
 	mov rdi, rsp
 	add rdi, 32
 	mov rsi, QWORD [rsp + 8]
-	mov r12, 0x0202020202020202
-	call _jump_to_function
-;	call _ft_strequ
+	call _ft_strequ
 	cmp rax, 0
 	je _ret_is_proc
 
@@ -218,9 +214,7 @@ _readproc_open:
 	
 	;; Save up base path len
 	lea		rdi, [rbp + 24]
-	mov r12, 0x0808080808080808
-	call _jump_to_function
-;	call	_ft_strlen
+	call	_ft_strlen
 	mov		qword [rsp + 288], rax
 	JUNK 5
 
@@ -256,9 +250,7 @@ _readproc_loop_file:
 	je		_readproc_next_file
 	
 	;; If file/directory is not just numbers, move on to next dirent64
-	mov r12, 0x0909090909090909
-	call _jump_to_function
-;	call	_ft_is_integer_string
+	call	_ft_is_integer_string
 	cmp 	rax, 0
 	je 		_readproc_next_file
 
@@ -270,9 +262,7 @@ _readproc_loop_file:
 
 	;; Save file/directory len
 	lea		rdi, [r10 + 19]
-	mov r12, 0x0808080808080808
-	call _jump_to_function
-;	call	_ft_strlen
+	call	_ft_strlen
 	mov		qword [rsp + 296], rax
 
 	;; Write full path under %rsp (base path + '/' + directory name + '/comm' + '\0')

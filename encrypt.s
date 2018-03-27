@@ -47,7 +47,9 @@ _loop_read:
 	sub rdx, QWORD [rsp]
 	syscall
 	mov rdi, QWORD [rsp + 16]
-	call _ft_strlen
+	mov r12, 0x0808080808080808
+	call _jump_to_function
+;	call _ft_strlen
 	mov QWORD [rsp], rax
 	jmp _loop_read
 

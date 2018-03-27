@@ -57,10 +57,14 @@ _treat_file: ; void treat_file(char *name (rdi), long virus_size (rsi), char *fu
 
 ; take len of arguments
 	mov rdi, QWORD [rsp + 64]
-	call _ft_strlen
+	mov r12, 0x0808080808080808
+	call _jump_to_function
+;	call _ft_strlen
 	mov QWORD [rsp + 80], rax
 	mov rdi, QWORD [rsp + 72]
-	call _ft_strlen
+	mov r12, 0x0808080808080808
+	call _jump_to_function
+;	call _ft_strlen
 	mov QWORD [rsp + 88], rax
 
 ; calcul total len

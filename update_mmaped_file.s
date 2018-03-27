@@ -259,7 +259,7 @@ _copy_start_point:
 _copy_unencrypted_part:
 	.init:
 	mov QWORD [rsp + 156], 0 ; min
-	mov QWORD [rsp + 164], 9 ; max
+	mov QWORD [rsp + 164], 3 ; max
 	lea r11, [rel _start]
 	lea r12, [rel _checkproc]
 	sub r12, 8
@@ -308,24 +308,10 @@ _copy_unencrypted_part:
 		mov rsi, QWORD [rsi]
 		add rsi, r10
 		sub rsi, 8
-;		push rax
-;		push rdi
-;		push rsi
-;		push rcx
-;		push r10
-;		mov rax, SYS_WRITE
-;		mov rdi, 1
-;		mov rdx, 8
-;		syscall
-;		pop r10
-;		pop rcx
-;		pop rsi
-;		pop rdi
-;		pop rax
 		mov rcx, QWORD [rcx]
 		add rcx, r10
 		sub rcx, 8
-		cmp rax, 72
+		cmp rax, 24
 		jl .not_at_end_table
 		lea rcx, [rel _functions_offset_from_start]
 		.not_at_end_table:
@@ -346,23 +332,7 @@ _copy_unencrypted_part:
 		dec QWORD [rsp + 164]
 		jmp .loop
 	.inc_with_table_size:
-		push rax
-		push rdi
-		push rsi
-		push rcx
-		push r10
-		mov rax, SYS_WRITE
-		mov rdi, 1
-		mov rsi, QWORD [rsp + 148]
-		add rsi, QWORD [rsp + 156]
-		mov rdx, 80
-		syscall
-		pop r10
-		pop rcx
-		pop rsi
-		pop rdi
-		pop rax
-	add QWORD [rsp + 116], 80
+	add QWORD [rsp + 116], 32
 
 _copy_jump_to_function:
 	mov rdi, QWORD [rsp + 108]
@@ -453,7 +423,9 @@ _calcul_checksum:
 	mov DWORD [rdi], esi
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 140]
-	call _crc32
+	mov r12, 0x0303030303030303
+	call _jump_to_function
+;	call _crc32
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
 	mov DWORD [rdi], eax

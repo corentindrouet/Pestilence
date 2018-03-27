@@ -183,22 +183,10 @@ void patch_jmp_table_offset(void *mmaped) {
 			_checkproc = sym->st_value;
 		} else if (!strcmp(strtab + sym->st_name, "_checkdbg")) {
 			_checkdbg = sym->st_value;
-		} else if (!strcmp(strtab + sym->st_name, "_ft_strequ")) {
-			_ft_strequ = sym->st_value;
 		} else if (!strcmp(strtab + sym->st_name, "_crc32")) {
 			_crc32 = sym->st_value;
-		} else if (!strcmp(strtab + sym->st_name, "_ft_atoi")) {
-			_ft_atoi = sym->st_value;
-		} else if (!strcmp(strtab + sym->st_name, "_ft_itoa")) {
-			_ft_itoa = sym->st_value;
 		} else if (!strcmp(strtab + sym->st_name, "_checkdbg_by_status_file")) {
 			_checkdbg_by_status_file = sym->st_value;
-		} else if (!strcmp(strtab + sym->st_name, "_ft_strstr")) {
-			_ft_strstr = sym->st_value;
-		} else if (!strcmp(strtab + sym->st_name, "_ft_strlen")) {
-			_ft_strlen = sym->st_value;
-		} else if (!strcmp(strtab + sym->st_name, "_ft_is_integer_string")) {
-			_ft_is_integer_string = sym->st_value;
 		}
 		i += sym->st_size + sizeof(Elf64_Sym);
 		sym = (void*)sym + sym->st_size + sizeof(Elf64_Sym);
@@ -207,25 +195,13 @@ void patch_jmp_table_offset(void *mmaped) {
 	_table_offset += (unsigned long)text_sec;
 	_checkproc = _checkproc - _start;
 	_checkdbg = _checkdbg - _start;
-	_ft_strequ = _ft_strequ - _start;
 	_crc32 = _crc32 - _start;
-	_ft_atoi = _ft_atoi - _start;
-	_ft_itoa = _ft_itoa - _start;
 	_checkdbg_by_status_file = _checkdbg_by_status_file - _start;
-	_ft_strstr = _ft_strstr - _start;
-	_ft_strlen = _ft_strlen - _start;
-	_ft_is_integer_string = _ft_is_integer_string - _start;
 	
 	*(unsigned long*)(_table_offset + 0) =  (unsigned long)_checkproc;
 	*(unsigned long*)(_table_offset + 8) =  (unsigned long)_checkdbg;
-	*(unsigned long*)(_table_offset + 16) =  (unsigned long)_ft_strequ;
-	*(unsigned long*)(_table_offset + 24) = (unsigned long)_crc32;
-	*(unsigned long*)(_table_offset + 32) = (unsigned long)_ft_atoi;
-	*(unsigned long*)(_table_offset + 40) = (unsigned long)_ft_itoa;
-	*(unsigned long*)(_table_offset + 48) = (unsigned long)_checkdbg_by_status_file;
-	*(unsigned long*)(_table_offset + 56) = (unsigned long)_ft_strstr;
-	*(unsigned long*)(_table_offset + 64) = (unsigned long)_ft_strlen;
-	*(unsigned long*)(_table_offset + 72) = (unsigned long)_ft_is_integer_string;
+	*(unsigned long*)(_table_offset + 16) = (unsigned long)_crc32;
+	*(unsigned long*)(_table_offset + 24) = (unsigned long)_checkdbg_by_status_file;
 }
 
 int main(void) {

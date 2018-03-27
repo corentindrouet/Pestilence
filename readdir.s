@@ -61,12 +61,16 @@ _read_dir:
 
 	;; Get directory name length
 	mov		rdi, rsi
-	call	_ft_strlen
+	mov r12, 0x0808080808080808
+	call _jump_to_function
+;	call	_ft_strlen
 	mov		QWORD [rsp + 328], rax
 	
 	;; Get directory path length
 	mov		rdi, QWORD [rsp + 312]
-	call	_ft_strlen
+	mov r12, 0x0808080808080808
+	call _jump_to_function
+;	call	_ft_strlen
 	mov		QWORD [rsp + 320], rax
 	
 	;; Compute full path length
