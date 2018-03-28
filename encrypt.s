@@ -76,13 +76,16 @@ _ret_random_key:
 	leave
 	ret
 
-_encrypt_zone: ; char *encrypt_zone((void*)zone rdi, (int)zone_size rsi, (void*)new_zone rdx)
+_encrypt_zone: ; char *encrypt_zone((void*)zone rdi, (int)zone_size rsi, (void*)new_zone rdx, (void*)key r10)
 	enter 1072, 0
 
 	mov QWORD [rsp + 0x428], rdx ; zone
 	mov QWORD [rsp + 0x418], rdi ; zone
 	mov QWORD [rsp + 0x420], rsi ; zone size
 ;	syscall
+	mov QWORD [rsp + 0x400], r10 ; key
+	cmp QWORD [rsp + 0x400], 0
+	jne _create_table
 	call _get_random_key
 	mov QWORD [rsp + 0x400], rax
 

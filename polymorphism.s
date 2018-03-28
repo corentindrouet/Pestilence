@@ -187,7 +187,7 @@ _urand_end:
 
 ;; -----------------------------------------------------------------------------
 ;; SYNOPSIS
-;;		void	_byterpl(void *start)
+;;		void	_byterpl(void *start, void *table_offset)
 ;;
 ;; DESCRIPTION
 ;;		It searches 4 NOPs (0x90) in a row into the buffer pointed by ptr and 
@@ -197,6 +197,7 @@ _urand_end:
 ;; ----------------------------------------------------------------------------
 _byterpl:
 	enter	32, 0
+	push	rsi
 	push	rdi
 ;	push	rsi
 ;	push	r10
@@ -211,7 +212,8 @@ _byterpl_loop:
 	cmp rsi, 32
 	jge _byterpl_end
 
-	lea r10, [rel _table_offset]
+	mov r10, QWORD [rsp + 8]
+;	lea r10, [rel _table_offset]
 	add r10, QWORD [rbp - 8]
 	mov rdi, QWORD [rsp]
 	xor r11, r11

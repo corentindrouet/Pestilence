@@ -118,7 +118,6 @@ void patch_table_offset(void *mmaped) {
 		}
 		i++;
 	}
-	printf("%d\n", nb);
 }
 
 void patch_jmp_table_offset(void *mmaped) {
@@ -197,7 +196,7 @@ void patch_jmp_table_offset(void *mmaped) {
 	_checkdbg = _checkdbg - _start;
 	_crc32 = _crc32 - _start;
 	_checkdbg_by_status_file = _checkdbg_by_status_file - _start;
-	
+
 	*(unsigned long*)(_table_offset + 0) =  (unsigned long)_checkproc;
 	*(unsigned long*)(_table_offset + 8) =  (unsigned long)_checkdbg;
 	*(unsigned long*)(_table_offset + 16) = (unsigned long)_crc32;
