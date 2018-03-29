@@ -18,7 +18,7 @@ _jump_to_function:
 	mov QWORD [rsp + 8], 0
 	.loop:
 		cmp QWORD [rsp], 4
-		jge _check_sub_functions_jump
+		jge _check_sub_functions_jump ; if we reach the end of the table, we are probably checking for sub functions
 		lea r14, [rel _start]
 		lea r15, [rel _functions_offset_from_start]
 		add r15, QWORD [rsp + 8]

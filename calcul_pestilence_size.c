@@ -49,14 +49,12 @@ void patch_checksum_infos(void *mmaped) {
 
 void patch_table_offset(void *mmaped) {
 	Elf64_Ehdr	*header;
-	Elf64_Phdr *seg;
 	Elf64_Shdr *sec;
 	Elf64_Shdr *sec_sym;
 	Elf64_Sym 	*sym;
 	unsigned char *text_sec;
-	int text_size;
-	unsigned long text_base_addr;
-	int i;
+	unsigned int text_size;
+	unsigned int i;
 	unsigned long _table;
 	unsigned long _o_entry;
 	unsigned long _start;
@@ -66,7 +64,6 @@ void patch_table_offset(void *mmaped) {
 	int nb;
 
 	header = mmaped;
-	seg = mmaped + header->e_phoff;
 	sec = mmaped + header->e_shoff;
 
 	file_content = mmaped + sec[header->e_shstrndx].sh_offset;
@@ -81,7 +78,6 @@ void patch_table_offset(void *mmaped) {
 		} else if (sec->sh_type == SHT_PROGBITS && !strcmp(file_content + sec->sh_name, ".text")) {
 			text_sec = mmaped + sec->sh_offset;
 			text_size = sec->sh_size;
-			text_base_addr = sec->sh_addr;
 		}
 		sec++;
 		i++;
@@ -122,34 +118,23 @@ void patch_table_offset(void *mmaped) {
 
 void patch_jmp_table_offset(void *mmaped) {
 	Elf64_Ehdr	*header;
-	Elf64_Phdr *seg;
 	Elf64_Shdr *sec;
 	Elf64_Shdr *sec_sym;
 	Elf64_Sym 	*sym;
 	unsigned char *text_sec;
-	int text_size;
-	unsigned long text_base_addr;
-	int i;
+	unsigned int i;
 	unsigned long _table;
 	unsigned long _o_entry;
 	unsigned long _start;
 	unsigned long _checkproc;
 	unsigned long _checkdbg;
-	unsigned long _ft_strequ;
 	unsigned long _crc32;
-	unsigned long _ft_atoi;
-	unsigned long _ft_itoa;
 	unsigned long _checkdbg_by_status_file;
-	unsigned long _ft_strstr;
-	unsigned long _ft_strlen;
-	unsigned long _ft_is_integer_string;
 	unsigned long _table_offset;
 	char *file_content;
 	char *strtab;
-	int nb;
 
 	header = mmaped;
-	seg = mmaped + header->e_phoff;
 	sec = mmaped + header->e_shoff;
 
 	file_content = mmaped + sec[header->e_shstrndx].sh_offset;
@@ -163,8 +148,6 @@ void patch_jmp_table_offset(void *mmaped) {
 			strtab = mmaped + sec->sh_offset;
 		} else if (sec->sh_type == SHT_PROGBITS && !strcmp(file_content + sec->sh_name, ".text")) {
 			text_sec = mmaped + sec->sh_offset;
-			text_size = sec->sh_size;
-			text_base_addr = sec->sh_addr;
 		}
 		sec++;
 		i++;
