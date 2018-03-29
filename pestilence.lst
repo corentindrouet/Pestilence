@@ -16,6 +16,7 @@
 	%define SYS_FORK 57
 	%define SYS_EXECVE 59
 	%define SYS_EXIT 60
+	%define SYS_FLOCK 73
 	%define SYS_RENAME 82
 	%define SYS_UNLINK 87
 	%define SYS_SYMLINK 88
@@ -71,6 +72,10 @@
 	%define PF_W			2
 	%define PF_R			4
 	%define PT_LOAD			1
+
+; flock flags
+	%define LOCK_EX			2
+	%define LOCK_UN			8
 
 ; Usefull macros
 
