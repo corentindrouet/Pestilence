@@ -108,8 +108,10 @@ _find_str_on_buff:
 	mov QWORD [rsp + 24], rax
 	mov rdi, QWORD [rsp + 24]
 	add rdi, _tracer_str.len
-_call_ft_atoi:
-	call _ft_atoi
+;	lea r10, [rel _ft_atoi]
+;	add r10, 1
+;	call r10
+	call _ft_atoi+1
 	mov QWORD [rsp + 16], rax
 	JUNK 5
 	cmp QWORD [rsp + 16], 0

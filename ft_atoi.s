@@ -8,6 +8,7 @@ _opcode:
 	dq 0x0404040404040404
 
 _ft_atoi:
+	db 0xc5
 	enter 32, 0
 
 	xor rcx, rcx

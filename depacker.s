@@ -34,6 +34,7 @@ section .text
 ;;		rsp + 0x4a8					: new_zone (r10)
 ;; -----------------------------------------------------------------------------------
 _decrypt: 
+	db 0xa9
 ; allocate necessary stack memory
     push rbp
     mov rbp, rsp
@@ -46,8 +47,10 @@ _decrypt:
 	JUNK 5
 	mov QWORD [rsp + 0x420], 0
 	mov QWORD [rsp + 0x428], 4
+	jmp _init_table+1
 
 _init_table:
+	db 0xdd
 ; while (rcx < 256) {
 ;   (int*)rsp[rcx] = rcx;
 ;   rcx++;
@@ -60,7 +63,7 @@ _init_table:
 	mov rcx, QWORD [rsp + 0x420]
     mov DWORD [rsp + rax], ecx
 	inc QWORD [rsp + 0x420]
-    jmp _init_table
+    jmp _init_table+1
 
 _init_sorting:
     xor rcx, rcx
@@ -68,8 +71,10 @@ _init_sorting:
     mov QWORD [rsp + 0x420], 0
 	JUNK 5
     mov QWORD [rsp + 0x428], 4
+	jmp _sorting+1
 
 _sorting:
+	db 0xa0
 ; while (rcx < 256)
     cmp QWORD [rsp + 0x420], 0x100
     jge _init_decrypt_loop
@@ -106,8 +111,10 @@ _sorting:
     mov rax, r10
     mul QWORD [rsp + 0x428]
     lea rsi, [rel rsp + rax]
+	jmp _swap+1
 
 _swap:
+	db 0x69
     xor r10, r10
     xor r11, r11
     mov r10d, DWORD [rdi]
@@ -120,7 +127,7 @@ _swap:
     sub DWORD [rdi], r11d
 	JUNK 5
     inc QWORD [rsp + 0x420]
-    jmp _sorting
+    jmp _sorting+1
 
 _init_decrypt_loop:
 	mov QWORD [rsp + 0x410], 0
@@ -128,8 +135,10 @@ _init_decrypt_loop:
 	mov QWORD [rsp + 0x420], 0
 	mov QWORD [rsp + 0x428], 4
 	xor rcx, rcx
+	jmp _decrypt_loop+1
 
 _decrypt_loop:
+	db 0x72
     xor r10, r10
     mov r10, QWORD [rsp + 0x490]
 	cmp QWORD [rsp + 0x420], r10
@@ -155,8 +164,10 @@ _decrypt_loop:
 	JUNK 5
     mul QWORD [rsp + 0x428]
 	lea rsi, [rel rsp + rax]
+	jmp _swap2+1
 
 _swap2:
+	db 0x09
     xor r10, r10
     xor r11, r11
     mov r10d, DWORD [rdi]
@@ -196,7 +207,7 @@ _continue:
 	xor BYTE [rdi + rcx], r10b
 	inc QWORD [rsp + 0x420]
 	JUNK 5
-	jmp _decrypt_loop
+	jmp _decrypt_loop+1
 
 _end_decrypt:
 	leave

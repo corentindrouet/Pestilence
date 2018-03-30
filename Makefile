@@ -46,6 +46,8 @@ $(CALCUL_EXEC):
 	@$(CC) -o patch_encrypter.o -c patch_encrypter.c
 	@$(CC) -o $(CALCUL_EXEC) $(CALCUL_OBJ) crc32.o
 	@./$(CALCUL_EXEC)
+	$(info Strip $(EXEC))
+	@strip -s $(EXEC)
 
 patch: $(EXEC) $(CALCUL_EXEC)
 
