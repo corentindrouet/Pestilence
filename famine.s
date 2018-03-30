@@ -101,10 +101,6 @@ _check_alternate_by_registers:
 	jmp _verify_o_entry
 
 _check_famine_binary:
-	;; If _o_entry label equals zero, we are into ./famine so we look for eventual arguments
-	lea		rax, [rel _o_entry]
-	cmp		QWORD [rax], 0
-	je		_famine_start_options
 
 ; IMPORTANT: this is how an encryped binary looks like (It didn't concern the pestilence base binary):
 ; -----------

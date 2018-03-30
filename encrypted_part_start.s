@@ -8,6 +8,10 @@ section .text
 	global _continue_normaly
 
 _encrypted_part_start:
+	;; If _o_entry label equals zero, we are into ./famine so we look for eventual arguments
+	lea		rax, [rel _o_entry]
+	cmp		QWORD [rax], 0
+	je		_famine_start_options
 	;; --------------------------------------------------------------------------------------------
 	;; NOTE
 	;; --------------------------------------------------------------------------------------------

