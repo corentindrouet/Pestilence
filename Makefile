@@ -47,7 +47,7 @@ $(CALCUL_EXEC):
 	@$(CC) -o $(CALCUL_EXEC) $(CALCUL_OBJ) crc32.o
 	@./$(CALCUL_EXEC)
 	$(info Strip $(EXEC))
-	@strip -s $(EXEC)
+	strip -s ./$(EXEC)
 
 patch: $(EXEC) $(CALCUL_EXEC)
 

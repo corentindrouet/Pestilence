@@ -6,8 +6,8 @@ section .text
 	global _decrypt
 	global _end_decrypt
 	global _checksum
-	global _text_section_vaddr
-	global _total_size_to_checksum
+;	global _text_section_vaddr
+;	global _total_size_to_checksum
 
 ;; -----------------------------------------------------------------------------------
 ;; NAME
@@ -212,12 +212,6 @@ _continue:
 _end_decrypt:
 	leave
 	ret
-
-_text_section_vaddr:
-	dq 0x0000000000000000
-
-_total_size_to_checksum:
-	dd 0x00000000
 
 _checksum:
 	dd 0x00000000

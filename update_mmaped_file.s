@@ -24,7 +24,7 @@ _update_mmaped_file: ; update_mmaped_file(void *mmap_base_address, long file_siz
 	; rsp + 116 index mmap_tmp
 	; rsp + 124 set to 1 if infection worked, 0 else
 	; rsp + 132 key addr
-	; rsp + 140 text section offset in file
+	; rsp + 140 PT_LOAD segment offset in file
 	; rsp + 148 text section vaddr
 	; rsp + 240 -> 368, table_offset_tmp.
 	;;;;;;;;;;;;;;;;;;;;;
@@ -575,21 +575,12 @@ _inject_modified_depacker:
 	sub rcx, rsi
 	add QWORD [rsp + 116], rcx
 
-_store_section_vaddr:
-	mov rdi, QWORD [rsp + 108]
-	add rdi, QWORD [rsp + 116]
-	mov r10, QWORD [rsp + 148]
-	mov QWORD [rdi], r10
-	add QWORD [rsp + 116], 12
-
 _calcul_checksum:
-	mov rsi, QWORD [rsp + 116]
-	sub rsi, 12
-	sub rsi, QWORD [rsp + 140]
-	add rdi, 8
-	mov DWORD [rdi], esi
 	mov rdi, QWORD [rsp + 108]
-	add rdi, QWORD [rsp + 140]
+	add rdi, QWORD [rsp + 72]
+	lea rsi, [rel _checksum]
+	lea r10, [rel _o_entry]
+	sub rsi, r10
 	mov r12, 0x0303030303030303
 	call _jump_to_function
 ;	call _crc32

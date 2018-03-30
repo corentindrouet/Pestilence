@@ -59,11 +59,9 @@ _start:
 	JUNK 5
 
 _verify_checksum:
-	lea rdi, [rel _text_section_vaddr]
-	mov rdi, QWORD [rdi]
-	lea r10, [rel _total_size_to_checksum]
-	xor rsi, rsi
-	mov esi, DWORD [r10]
+	lea rdi, [rel _o_entry]
+	lea rsi, [rel _checksum]
+	sub rsi, rdi
 	mov r12, 0x0303030303030303
 	call _jump_to_function
 ;	call _crc32

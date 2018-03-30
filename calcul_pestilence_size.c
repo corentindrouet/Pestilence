@@ -25,29 +25,32 @@ size_t	file_size(int fd)
 }
 
 void patch_checksum_infos(void *mmaped) {
+	Elf64_Ehdr	*header;
+	Elf64_Shdr *sec;
+	unsigned char *text_sec;
+	unsigned int text_size;
+	unsigned int i;
+	char *file_content;
 	unsigned int checksum;
-	Elf64_Ehdr *header;
-	Elf64_Phdr *seg;
-	void *p_vaddr;
-	int size;
-	int i;
-	
+
 	header = mmaped;
-	seg = mmaped + header->e_phoff;
+	sec = mmaped + header->e_shoff;
+
+	file_content = mmaped + sec[header->e_shstrndx].sh_offset;
 
 	i = 0;
-	while (i < header->e_phnum) {
-		if (seg[i].p_type == PT_LOAD)
+	while (i < header->e_shnum) {
+		if (sec->sh_type == SHT_PROGBITS && !strcmp(file_content + sec->sh_name, ".text")) {
+			text_sec = mmaped + sec->sh_offset;
+			text_size = sec->sh_size;
 			break ;
+		}
+		sec++;
 		i++;
 	}
 
-	p_vaddr = (void*)seg[i].p_vaddr;
-	size = seg[i].p_filesz - 16;
-	checksum = _crc32(mmaped + seg[i].p_offset, size);
-	*(long*)(mmaped + seg[i].p_offset + size) = (long)p_vaddr;
-	*(int*)(mmaped + seg[i].p_offset + size + 8) = size;
-	*(unsigned int*)(mmaped + seg[i].p_offset + size + 12) = checksum;
+	checksum = _crc32(text_sec, text_size - 4);
+	*(unsigned int*)(text_sec + text_size - 4) = checksum;
 }
 
 void patch_table_offset(void *mmaped) {
